@@ -1,0 +1,31 @@
+model:
+  name: yolov8n
+  weights: yolov8n.pt
+  input_size: 640
+  conf_threshold: 0.25
+  iou_threshold: 0.45
+  max_detections: 300
+
+dataset:
+  path: data/ingredients/
+  train: train/images
+  val: val/images
+  test: test/images
+  classes:
+    - tomato
+    - onion
+    - carrot
+    - spinach
+    - milk
+    - banana
+    - apple
+    - chicken
+    - rice
+    - eggs
+
+training:
+  batch_size: 16
+  epochs: 100
+  learning_rate: 0.01
+  optimizer: SGD
+  patience: 30
