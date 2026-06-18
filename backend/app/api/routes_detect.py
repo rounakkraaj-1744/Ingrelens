@@ -82,5 +82,24 @@ async def get_detection_history(
             "confidence_scores": json.loads(detection.confidence_scores) if detection.confidence_scores else [],
             "created_at": detection.created_at
         })
-    
+
     return {"history": history, "total_count": len(history)}
+
+
+@router.post("/history")
+async def append_detection_history(
+    ingredients: List[str],
+    confidence_scores: List[float],
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    log = DetectionLog(
+        user_id=current_user.id,
+        detected_ingredients=json.dumps(ingredients),
+        confidence_scores=json.dumps(confidence_scores),
+        image_path=None,
+    )
+    db.add(log)
+    db.commit()
+    db.refresh(log)
+    return {"id": log.id, "created_at": log.created_at}

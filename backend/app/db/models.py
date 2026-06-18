@@ -93,3 +93,34 @@ class MealLog(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     user = relationship("User")
+
+
+class PantryItemRecord(Base):
+    __tablename__ = "pantry_items"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    external_id = Column(String, nullable=True)
+    name = Column(String, nullable=False)
+    category = Column(String, nullable=True)
+    quantity = Column(Float, default=1)
+    unit = Column(String, default="item")
+    expiry_date = Column(String, nullable=True)
+    status = Column(String, default="fresh")
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    user = relationship("User")
+
+
+class RecipeLikeRecord(Base):
+    __tablename__ = "recipe_likes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    recipe_id = Column(String, nullable=False)
+    liked = Column(Boolean, default=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    user = relationship("User")

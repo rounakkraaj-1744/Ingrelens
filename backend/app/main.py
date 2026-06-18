@@ -13,6 +13,7 @@ from app.api.routes_food import router as food_router
 from app.api.routes_pantry import router as pantry_router
 from app.api.routes_insights import router as insights_router
 from app.api.routes_meals import router as meals_router
+from app.api.routes_recipe_likes import router as recipe_likes_router
 
 # database
 from app.db.database import engine, Base
@@ -57,6 +58,7 @@ app.include_router(food_router, prefix="/api/food", tags=["Food Intelligence"])
 app.include_router(pantry_router, prefix="/api/pantry", tags=["Pantry"])
 app.include_router(insights_router, prefix="/api/insights", tags=["Insights"])
 app.include_router(meals_router, prefix="/api/meals", tags=["Meals"])
+app.include_router(recipe_likes_router, prefix="/api/recipe-likes", tags=["Recipe Likes"])
 
 @app.get("/")
 async def root():

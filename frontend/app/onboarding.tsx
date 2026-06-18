@@ -15,6 +15,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { BlurView } from 'expo-blur';
 import { useApp } from '@/context/AppContext';
+import { registerUser } from '@/lib/api';
 import { useState } from 'react';
 
 interface UserProfile {
@@ -31,8 +32,9 @@ interface UserProfile {
 export default function OnboardingScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { setProfile: updateProfile } = useApp();
+  const { setProfile: updateProfile, setAuthToken } = useApp();
   const [step, setStep] = useState(0);
+  const [submitting, setSubmitting] = useState(false);
   const [profile, setProfile] = useState<UserProfile>({
     name: '',
     email: '',
@@ -49,20 +51,43 @@ export default function OnboardingScreen() {
       setStep(step + 1);
     else {
       if (profile.name && profile.email && profile.age && profile.gender && profile.height && profile.weight && profile.goal) {
-        updateProfile({
-          name: profile.name,
-          email: profile.email,
-          age: Number(profile.age),
-          gender: profile.gender.toLowerCase() as 'male' | 'female',
-          height: Number(profile.height),
-          weight: Number(profile.weight),
-          fitnessGoal: profile.goal.toLowerCase() as 'bulk' | 'cut' | 'maintain',
-          dailyCalories: profile.goal === 'Bulk' ? 2700 : profile.goal === 'Cut' ? 1900 : 2200,
-          targetProtein: profile.goal === 'Bulk' ? 170 : profile.goal === 'Cut' ? 145 : 130,
-          targetCarbs: profile.goal === 'Bulk' ? 320 : profile.goal === 'Cut' ? 180 : 240,
-          targetFats: profile.goal === 'Bulk' ? 80 : profile.goal === 'Cut' ? 65 : 70,
-        });
-        router.replace('/(tabs)');
+        (async () => {
+          try {
+            setSubmitting(true);
+            const response = await registerUser({
+              email: profile.email,
+              password: profile.password,
+              gender: profile.gender.toLowerCase(),
+              age: Number(profile.age),
+              height_cm: Number(profile.height),
+              current_weight_kg: Number(profile.weight),
+              target_weight_kg: Number(profile.weight),
+              goal: profile.goal.toLowerCase(),
+              activity_level: 'moderate',
+            });
+            setAuthToken(response.access_token);
+            updateProfile({
+              name: profile.name,
+              email: profile.email,
+              age: Number(profile.age),
+              gender: profile.gender.toLowerCase() as 'male' | 'female',
+              height: Number(profile.height),
+              weight: Number(profile.weight),
+              targetWeight: Number(profile.weight),
+              fitnessGoal: profile.goal.toLowerCase() as 'bulk' | 'cut' | 'maintain',
+              dailyCalories: profile.goal === 'Bulk' ? 2700 : profile.goal === 'Cut' ? 1900 : 2200,
+              targetProtein: profile.goal === 'Bulk' ? 170 : profile.goal === 'Cut' ? 145 : 130,
+              targetCarbs: profile.goal === 'Bulk' ? 320 : profile.goal === 'Cut' ? 180 : 240,
+              targetFats: profile.goal === 'Bulk' ? 80 : profile.goal === 'Cut' ? 65 : 70,
+              streak: 0,
+            });
+            router.replace('/(tabs)');
+          } catch (error) {
+            Alert.alert('Account creation failed', error instanceof Error ? error.message : 'Please try again');
+          } finally {
+            setSubmitting(false);
+          }
+        })();
       } else
         Alert.alert('Please fill all fields');
     }
@@ -219,9 +244,9 @@ export default function OnboardingScreen() {
           {step === 2 && renderGoalStep()}
         </View>
 
-          <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
+          <TouchableOpacity style={styles.nextButton} onPress={handleNext} disabled={submitting}>
             <Text style={styles.nextButtonText}>
-              {step === 2 ? 'Get Started' : 'Continue'}
+              {submitting ? 'Creating account...' : step === 2 ? 'Get Started' : 'Continue'}
             </Text>
           </TouchableOpacity>
         </ScrollView>

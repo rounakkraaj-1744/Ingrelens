@@ -16,7 +16,6 @@ export default function WelcomeScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
-      {/* Background Image */}
       <View style={styles.backgroundContainer}>
         <Image
           source={{
@@ -27,9 +26,7 @@ export default function WelcomeScreen() {
         <View style={styles.overlay} />
       </View>
 
-      {/* Content */}
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Logo and Branding */}
         <View style={styles.branding}>
           <View style={styles.logoContainer}>
             <View style={styles.logo}>
@@ -46,7 +43,6 @@ export default function WelcomeScreen() {
           </View>
         </View>
 
-        {/* Feature Highlights */}
         <View style={styles.features}>
           <View style={styles.featureItem}>
             <View style={styles.featureIcon}>
@@ -68,7 +64,6 @@ export default function WelcomeScreen() {
           </View>
         </View>
 
-        {/* CTA Buttons */}
         <View style={styles.actions}>
           <TouchableOpacity style={styles.primaryButton} onPress={handleSignUp}>
             <Sparkles size={20} color="white" />
@@ -79,7 +74,6 @@ export default function WelcomeScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Footer */}
         <Text style={styles.footer}>
           By continuing, you agree to our Terms of Service and Privacy Policy
         </Text>

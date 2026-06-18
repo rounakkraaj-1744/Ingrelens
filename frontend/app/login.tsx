@@ -14,21 +14,32 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { ArrowLeft, Eye, EyeOff } from 'lucide-react-native';
 import { useApp } from '@/context/AppContext';
+import { loginUser } from '@/lib/api';
 
 export default function LoginScreen() {
-  const { setProfile } = useApp();
+  const { setProfile, setAuthToken } = useApp();
   const insets = useSafeAreaInsets();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!email || !password) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
-    setProfile({ email });
-    router.replace('/(tabs)');
+    try {
+      setSubmitting(true);
+      const response = await loginUser(email, password);
+      setAuthToken(response.access_token);
+      setProfile({ email });
+      router.replace('/(tabs)');
+    } catch (error) {
+      Alert.alert('Login failed', error instanceof Error ? error.message : 'Please check your credentials');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleBack = () => {
@@ -104,8 +115,8 @@ export default function LoginScreen() {
             <Text style={styles.forgotButtonText}>Forgot password?</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-            <Text style={styles.loginButtonText}>Sign In</Text>
+          <TouchableOpacity style={styles.loginButton} onPress={handleLogin} disabled={submitting}>
+            <Text style={styles.loginButtonText}>{submitting ? 'Signing in...' : 'Sign In'}</Text>
           </TouchableOpacity>
         </View>
 

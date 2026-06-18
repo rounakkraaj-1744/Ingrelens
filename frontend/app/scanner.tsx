@@ -18,6 +18,7 @@ import {
   Zap,
 } from 'lucide-react-native';
 import { useApp } from '@/context/AppContext';
+import { logScan } from '@/lib/api';
 
 interface DetectedIngredient {
   name: string;
@@ -27,22 +28,22 @@ interface DetectedIngredient {
 
 export default function ScannerScreen() {
   const insets = useSafeAreaInsets();
-  const { detectedIngredients, updateScanFromIngredients, setSelectedIngredientNames, addPantryItemsFromScan, setDetectedIngredients, pantryItems, recipes } = useApp();
+  const { detectedIngredients, updateScanFromIngredients, setSelectedIngredientNames, addPantryItemsFromScan, setDetectedIngredients, pantryItems, recipes, authToken } = useApp();
   const [isScanning, setIsScanning] = useState(false);
   const [hasScanned, setHasScanned] = useState(false);
   const [permission, requestPermission] = useCameraPermissions();
   const [facing] = useState<CameraType>('back');
 
   const simulatedDetectedIngredients: DetectedIngredient[] = useMemo(() => {
-    const pantryMatches = pantryItems.slice(0, 3).map((item, index) => ({
+    const pantryMatches = pantryItems.slice(0, 3).map((item: any, index: number) => ({
       name: item.name,
       confidence: 96 - index * 6,
       selected: true,
     }));
     const recipeIngredients = recipes
-      .flatMap((recipe) => recipe.ingredients)
+      .flatMap((recipe: any) => recipe.ingredients)
       .slice(0, 3)
-      .map((name, index) => ({
+      .map((name: string, index: number) => ({
         name,
         confidence: 86 - index * 4,
         selected: index !== 2,
@@ -77,18 +78,31 @@ export default function ScannerScreen() {
   };
 
   const toggleIngredient = (index: number) => {
-    setDetectedIngredients(prev =>
-      prev.map((ingredient, i) =>
+    setDetectedIngredients((prev: DetectedIngredient[]) =>
+      prev.map((ingredient: DetectedIngredient, i: number) =>
         i === index ? { ...ingredient, selected: !ingredient.selected } : ingredient
       )
     );
   };
 
-  const selectedCount = detectedIngredients.filter(ing => ing.selected).length;
+  const selectedCount = detectedIngredients.filter((ing: DetectedIngredient) => ing.selected).length;
 
   const handleGenerateRecipe = () => {
-    setSelectedIngredientNames(detectedIngredients.filter(ing => ing.selected).map(ing => ing.name));
-    addPantryItemsFromScan(detectedIngredients);
+    const selected = detectedIngredients.filter((ing: DetectedIngredient) => ing.selected);
+    setSelectedIngredientNames(selected.map((ing: DetectedIngredient) => ing.name));
+    addPantryItemsFromScan(selected);
+    if (selected.length > 0) {
+      if (authToken) {
+        logScan(
+          {
+            ingredients: selected.map((ing: DetectedIngredient) => ing.name),
+            confidence_scores: selected.map((ing: DetectedIngredient) => ing.confidence),
+            meal_summary: { source: 'scanner', selected_count: selected.length },
+          },
+          authToken
+        ).catch(() => {});
+      }
+    }
     router.push('/(tabs)/recipes');
   };
 
@@ -203,7 +217,7 @@ export default function ScannerScreen() {
             </View>
 
             <View style={styles.ingredientsList}>
-              {detectedIngredients.map((ingredient, index) => (
+              {detectedIngredients.map((ingredient: DetectedIngredient, index: number) => (
                 <TouchableOpacity
                   key={index}
                   style={[

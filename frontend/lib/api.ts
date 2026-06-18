@@ -17,6 +17,81 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+export type AuthToken = {
+  access_token: string;
+  token_type: string;
+};
+
+export type UserProfile = {
+  id: number;
+  email: string;
+  is_active: boolean;
+  gender?: 'male' | 'female' | null;
+  age?: number | null;
+  height_cm?: number | null;
+  current_weight_kg?: number | null;
+  target_weight_kg?: number | null;
+  goal?: 'bulk' | 'cut' | 'maintain' | null;
+  activity_level?: string | null;
+  bmr?: number | null;
+  tdee?: number | null;
+  target_calories?: number | null;
+  target_protein_g?: number | null;
+  target_carbs_g?: number | null;
+  target_fats_g?: number | null;
+  created_at: string;
+};
+
+export async function registerUser(payload: {
+  email: string;
+  password: string;
+  gender?: string;
+  age?: number;
+  height_cm?: number;
+  current_weight_kg?: number;
+  target_weight_kg?: number;
+  goal?: string;
+  activity_level?: string;
+}) {
+  return request<AuthToken>('/api/auth/register', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function loginUser(email: string, password: string) {
+  const params = new URLSearchParams({ email, password });
+  return request<AuthToken>(`/api/auth/login?${params.toString()}`, {
+    method: 'POST',
+  });
+}
+
+export async function fetchCurrentUser(token: string) {
+  return request<UserProfile>('/api/auth/me', {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+}
+
+export async function updateCurrentUser(token: string, payload: Partial<{
+  gender: string;
+  age: number;
+  height_cm: number;
+  current_weight_kg: number;
+  target_weight_kg: number;
+  goal: string;
+  activity_level: string;
+}>) {
+  return request<UserProfile>('/api/auth/me', {
+    method: 'PUT',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+}
+
 export type WeeklyInsights = {
   period: string;
   avg_calories: number;
@@ -62,5 +137,57 @@ export async function logMeal(payload: {
       Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify(payload),
+  });
+}
+
+export async function logScan(payload: {
+  ingredients: string[];
+  confidence_scores: number[];
+  meal_summary?: Record<string, unknown>;
+}, token: string) {
+  return request('/api/detect/history', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+}
+
+export type PantryItemRecord = {
+  external_id?: string | null;
+  name: string;
+  category?: string | null;
+  quantity: number;
+  unit: string;
+  expiry_date?: string | null;
+  status: string;
+};
+
+export async function fetchPantryItems(token: string) {
+  return request<{ items: PantryItemRecord[] }>('/api/pantry', {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export async function syncPantryItems(token: string, items: PantryItemRecord[]) {
+  return request<{ items: PantryItemRecord[] }>('/api/pantry', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify(items),
+  });
+}
+
+export async function fetchRecipeLikes(token: string) {
+  return request<{ likes: { recipe_id: string; liked: boolean }[] }>('/api/recipe-likes', {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export async function syncRecipeLikes(token: string, items: { recipe_id: string; liked: boolean }[]) {
+  return request('/api/recipe-likes', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify(items),
   });
 }

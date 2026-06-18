@@ -147,3 +147,30 @@ class WeeklyInsight(BaseModel):
     adherence_score: float
     top_foods: List[str]
     recommendations: List[str]
+
+class PantryItemRecordCreate(BaseModel):
+    external_id: Optional[str] = None
+    name: str
+    category: Optional[str] = None
+    quantity: float = 1
+    unit: str = "item"
+    expiry_date: Optional[str] = None
+    status: str = "fresh"
+
+class PantryItemRecord(BaseModel):
+    id: int
+    external_id: Optional[str] = None
+    name: str
+    category: Optional[str] = None
+    quantity: float
+    unit: str
+    expiry_date: Optional[str] = None
+    status: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class RecipeLikeSync(BaseModel):
+    recipe_id: str
+    liked: bool = True
