@@ -5,6 +5,7 @@ from app.db.database import get_db
 from app.db.models import User
 from app.api.routes_auth import get_current_user
 from app.services.nutrition_service import NutritionCalculatorService
+from app.services.food_catalog_service import food_catalog_service
 
 router = APIRouter()
 
@@ -106,3 +107,8 @@ async def calculate_nutrition_stats(
             "macros": f"Based on {goal} goal ratios"
         }
     }
+
+@router.get("/foods")
+async def browse_foods(query: str):
+    item = food_catalog_service.find(query)
+    return {"query": query, "result": item.__dict__ if item else None}

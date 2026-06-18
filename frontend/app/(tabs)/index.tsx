@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -21,9 +21,12 @@ import {
   Bell,
 } from 'lucide-react-native';
 import { useApp } from '@/context/AppContext';
+import { fetchWeeklyInsights } from '@/lib/api';
 
 export default function HomeScreen() {
   const { profile } = useApp();
+  const [insights, setInsights] = useState<{ avg_calories?: number; avg_protein?: number; adherence_score?: number } | null>(null);
+  const hasProfile = Boolean(profile.email || profile.name);
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -50,8 +53,15 @@ export default function HomeScreen() {
   };
 
   const dailyCalories = profile?.dailyCalories || 2000;
-  const consumedCalories = 1200;
+  const consumedCalories = insights?.avg_calories ? Math.round(insights.avg_calories) : 0;
   const calorieProgress = (consumedCalories / dailyCalories) * 100;
+
+  useEffect(() => {
+    const token = profile.email ? 'demo-token' : '';
+    fetchWeeklyInsights(token)
+      .then(setInsights)
+      .catch(() => setInsights(null));
+  }, [profile.email]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -96,7 +106,7 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.content}>
-          <View style={styles.card}>
+            <View style={styles.card}>
             <View style={styles.cardHeader}>
               <Text style={styles.cardTitle}>Today&apos;s Progress</Text>
               <Flame size={20} color="#d4af37" />
@@ -106,14 +116,14 @@ export default function HomeScreen() {
               <View style={styles.progressHeader}>
                 <Text style={styles.progressLabel}>Calories</Text>
                 <Text style={styles.progressValue}>
-                  {consumedCalories} / {dailyCalories}
+                  {hasProfile ? `${consumedCalories} / ${dailyCalories}` : 'No data yet'}
                 </Text>
               </View>
               <View style={styles.progressBar}>
                 <View
                   style={[
                     styles.progressFill,
-                    { width: `${Math.min(calorieProgress, 100)}%` },
+                    { width: `${hasProfile ? Math.min(calorieProgress, 100) : 0}%` },
                   ]}
                 />
               </View>
@@ -121,18 +131,29 @@ export default function HomeScreen() {
 
             <View style={styles.macroGrid}>
               <View style={styles.macroItem}>
-                <Text style={[styles.macroValue, { color: '#1a4431' }]}>45g</Text>
+                <Text style={[styles.macroValue, { color: '#1a4431' }]}>{insights?.avg_protein ? `${Math.round(insights.avg_protein)}g` : '0g'}</Text>
                 <Text style={styles.macroLabel}>Protein</Text>
               </View>
               <View style={styles.macroItem}>
-                <Text style={[styles.macroValue, { color: '#d4af37' }]}>120g</Text>
+                <Text style={[styles.macroValue, { color: '#d4af37' }]}>{hasProfile ? '0g' : '0g'}</Text>
                 <Text style={styles.macroLabel}>Carbs</Text>
               </View>
               <View style={styles.macroItem}>
-                <Text style={[styles.macroValue, { color: '#6b7280' }]}>38g</Text>
+                <Text style={[styles.macroValue, { color: '#6b7280' }]}>{hasProfile ? '0g' : '0g'}</Text>
                 <Text style={styles.macroLabel}>Fats</Text>
               </View>
             </View>
+            {insights ? (
+              <View style={styles.insightBanner}>
+                <Text style={styles.insightTitle}>Weekly adherence</Text>
+                <Text style={styles.insightValue}>{Math.round((insights.adherence_score || 0) * 100)}%</Text>
+              </View>
+            ) : (
+              <View style={styles.insightBanner}>
+                <Text style={styles.insightTitle}>Start tracking</Text>
+                <Text style={styles.insightValue}>Scan a meal to see your progress</Text>
+              </View>
+            )}
           </View>
 
           {/* Streak Card */}
@@ -144,7 +165,7 @@ export default function HomeScreen() {
                   <Text style={styles.streakTitle}>Streak</Text>
                 </View>
                 <Text style={styles.streakNumber}>{profile?.streak || 0}</Text>
-                <Text style={styles.streakMessage}>{getStreakMessage()}</Text>
+                <Text style={styles.streakMessage}>{profile?.streak ? getStreakMessage() : 'No streak yet'}</Text>
               </View>
               <View style={styles.streakIcon}>
                 <Zap size={28} color="white" />
@@ -174,33 +195,43 @@ export default function HomeScreen() {
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Recent Meals</Text>
             <View style={styles.mealsList}>
-              <View style={styles.mealItem}>
-                <Image
-                  source={{
-                    uri: 'https://images.unsplash.com/photo-1744116432674-e6ff2b6d9544?w=100&h=100&fit=crop',
-                  }}
-                  style={styles.mealImage}
-                />
-                <View style={styles.mealInfo}>
-                  <Text style={styles.mealName}>Quinoa Power Bowl</Text>
-                  <Text style={styles.mealDetails}>450 cal • Lunch</Text>
+              {!hasProfile ? (
+                <View style={styles.emptyState}>
+                  <Text style={styles.emptyStateTitle}>No meals logged yet</Text>
+                  <Text style={styles.emptyStateText}>Create your profile, scan a meal, and your history will appear here.</Text>
                 </View>
-                <Text style={styles.mealTime}>2h ago</Text>
-              </View>
-              
-              <View style={styles.mealItem}>
-                <Image
-                  source={{
-                    uri: 'https://images.unsplash.com/photo-1551782450-a2132b4ba21d?w=100&h=100&fit=crop',
-                  }}
-                  style={styles.mealImage}
-                />
-                <View style={styles.mealInfo}>
-                  <Text style={styles.mealName}>Avocado Toast</Text>
-                  <Text style={styles.mealDetails}>320 cal • Breakfast</Text>
-                </View>
-                <Text style={styles.mealTime}>6h ago</Text>
-              </View>
+              ) : null}
+              {hasProfile ? (
+                <>
+                  <View style={styles.mealItem}>
+                    <Image
+                      source={{
+                        uri: 'https://images.unsplash.com/photo-1744116432674-e6ff2b6d9544?w=100&h=100&fit=crop',
+                      }}
+                      style={styles.mealImage}
+                    />
+                    <View style={styles.mealInfo}>
+                      <Text style={styles.mealName}>Quinoa Power Bowl</Text>
+                      <Text style={styles.mealDetails}>450 cal • Lunch</Text>
+                    </View>
+                    <Text style={styles.mealTime}>2h ago</Text>
+                  </View>
+                  
+                  <View style={styles.mealItem}>
+                    <Image
+                      source={{
+                        uri: 'https://images.unsplash.com/photo-1551782450-a2132b4ba21d?w=100&h=100&fit=crop',
+                      }}
+                      style={styles.mealImage}
+                    />
+                    <View style={styles.mealInfo}>
+                      <Text style={styles.mealName}>Avocado Toast</Text>
+                      <Text style={styles.mealDetails}>320 cal • Breakfast</Text>
+                    </View>
+                    <Text style={styles.mealTime}>6h ago</Text>
+                  </View>
+                </>
+              ) : null}
             </View>
           </View>
 
@@ -480,6 +511,27 @@ const styles = StyleSheet.create({
   mealsList: {
     gap: 16,
     marginTop: 16,
+  },
+  emptyState: {
+    paddingVertical: 24,
+    paddingHorizontal: 16,
+    borderRadius: 16,
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    alignItems: 'center',
+  },
+  emptyStateTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1f2937',
+    marginBottom: 8,
+  },
+  emptyStateText: {
+    fontSize: 14,
+    color: '#6b7280',
+    textAlign: 'center',
+    lineHeight: 20,
   },
   mealItem: {
     flexDirection: 'row',

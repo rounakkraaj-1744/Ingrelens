@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -7,7 +7,7 @@ import {
   Alert,
   ScrollView,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
 import {
@@ -26,20 +26,29 @@ interface DetectedIngredient {
 }
 
 export default function ScannerScreen() {
-  const { detectedIngredients, updateScanFromIngredients, setSelectedIngredientNames, addPantryItemsFromScan } = useApp();
+  const insets = useSafeAreaInsets();
+  const { detectedIngredients, updateScanFromIngredients, setSelectedIngredientNames, addPantryItemsFromScan, setDetectedIngredients, pantryItems, recipes } = useApp();
   const [isScanning, setIsScanning] = useState(false);
   const [hasScanned, setHasScanned] = useState(false);
   const [permission, requestPermission] = useCameraPermissions();
   const [facing] = useState<CameraType>('back');
 
-  const mockDetectedIngredients: DetectedIngredient[] = [
-    { name: 'Tomatoes', confidence: 95, selected: true },
-    { name: 'Bell Peppers', confidence: 88, selected: true },
-    { name: 'Onions', confidence: 92, selected: true },
-    { name: 'Garlic', confidence: 78, selected: true },
-    { name: 'Spinach', confidence: 85, selected: false },
-    { name: 'Mushrooms', confidence: 82, selected: true },
-  ];
+  const simulatedDetectedIngredients: DetectedIngredient[] = useMemo(() => {
+    const pantryMatches = pantryItems.slice(0, 3).map((item, index) => ({
+      name: item.name,
+      confidence: 96 - index * 6,
+      selected: true,
+    }));
+    const recipeIngredients = recipes
+      .flatMap((recipe) => recipe.ingredients)
+      .slice(0, 3)
+      .map((name, index) => ({
+        name,
+        confidence: 86 - index * 4,
+        selected: index !== 2,
+      }));
+    return [...pantryMatches, ...recipeIngredients].slice(0, 6);
+  }, [pantryItems, recipes]);
 
   useEffect(() => {
     if (!permission) {
@@ -57,7 +66,7 @@ export default function ScannerScreen() {
     setTimeout(() => {
       setIsScanning(false);
       setHasScanned(true);
-      updateScanFromIngredients(mockDetectedIngredients);
+      updateScanFromIngredients(simulatedDetectedIngredients);
     }, 3000);
   };
 
@@ -107,7 +116,7 @@ export default function ScannerScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={handleBack}>
           <ArrowLeft size={24} color="white" />
@@ -131,7 +140,9 @@ export default function ScannerScreen() {
               <Camera size={64} color="#9ca3af" />
               <Text style={styles.cameraPlaceholderTitle}>Ready to scan</Text>
               <Text style={styles.cameraPlaceholderText}>
-                Point your camera at ingredients to identify them
+                {pantryItems.length > 0
+                  ? 'Point your camera at ingredients to identify them'
+                  : 'Add pantry items or sign in to personalize scanning'}
               </Text>
             </View>
           )}
@@ -156,7 +167,9 @@ export default function ScannerScreen() {
             <View style={styles.instructions}>
               <View style={styles.instructionCard}>
                 <Text style={styles.instructionText}>
-                  💡 For best results, ensure good lighting and place ingredients clearly in view
+                  {pantryItems.length > 0
+                    ? 'For best results, ensure good lighting and place ingredients clearly in view'
+                    : 'Scanning will become personalized after you start adding ingredients.'}
                 </Text>
               </View>
             </View>
@@ -264,7 +277,7 @@ export default function ScannerScreen() {
           </View>
         </ScrollView>
       )}
-    </SafeAreaView>
+    </View>
   );
 }
 

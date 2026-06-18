@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -17,44 +17,58 @@ import {
   Trophy,
   Star,
 } from 'lucide-react-native';
+import { useApp } from '@/context/AppContext';
+import { fetchWeeklyInsights } from '@/lib/api';
 
 export default function ProgressScreen() {
+  const { profile } = useApp();
   const [activeTab, setActiveTab] = useState<'overview' | 'nutrition' | 'achievements'>('overview');
+  const [insights, setInsights] = useState<{ avg_calories?: number; avg_protein?: number; adherence_score?: number; top_foods?: string[] } | null>(null);
 
-  const achievements = [
+  const achievements = useMemo(() => [
     {
       id: 1,
       title: '7-Day Streak',
       description: 'Logged meals for 7 consecutive days',
-      earned: true,
-      date: '2 days ago',
+      earned: profile.streak >= 7,
+      date: profile.streak >= 7 ? 'This week' : 'Keep going',
       tier: 'gold',
     },
     {
       id: 2,
       title: 'Protein Champion',
       description: 'Hit protein target 5 days this week',
-      earned: true,
-      date: '1 day ago',
+      earned: (insights?.avg_protein || 0) >= (profile.targetProtein || 0) * 0.8,
+      date: 'This week',
       tier: 'silver',
     },
     {
       id: 3,
       title: 'Weight Loss Master',
       description: 'Lost 2kg towards your goal',
-      earned: false,
-      progress: 75,
+      earned: profile.fitnessGoal === 'cut' && (insights?.adherence_score || 0) > 0.7,
+      progress: Math.round((insights?.adherence_score || 0) * 100),
       tier: 'gold',
     },
     {
       id: 4,
       title: 'Recipe Explorer',
       description: 'Tried 10 different recipes',
-      earned: false,
-      progress: 60,
+      earned: (insights?.top_foods || []).length >= 4,
+      progress: Math.min(100, ((insights?.top_foods || []).length / 4) * 100),
       tier: 'bronze',
     },
-  ];
+  ], [profile.streak, profile.targetProtein, profile.fitnessGoal, insights]);
+
+  useEffect(() => {
+    if (!profile.email) {
+      setInsights(null);
+      return;
+    }
+    fetchWeeklyInsights('demo-token')
+      .then(setInsights)
+      .catch(() => setInsights(null));
+  }, [profile.email]);
 
   const getAchievementTierColor = (tier: string) => {
     switch (tier) {
@@ -73,18 +87,18 @@ export default function ProgressScreen() {
             <View style={styles.statsGrid}>
               <View style={styles.statCard}>
                 <Scale size={32} color="#1a4431" />
-                <Text style={styles.statValue}>74.0kg</Text>
+                <Text style={styles.statValue}>{profile.weight ? `${profile.weight}kg` : '—'}</Text>
                 <Text style={styles.statLabel}>Current Weight</Text>
                 <View style={styles.statBadge}>
-                  <Text style={styles.statBadgeText}>-1.2kg this week</Text>
+                  <Text style={styles.statBadgeText}>{profile.weight ? (profile.fitnessGoal === 'cut' ? 'Tracking cut' : 'Tracking maintain') : 'Set up profile'}</Text>
                 </View>
               </View>
               <View style={styles.statCard}>
                 <Target size={32} color="#d4af37" />
-                <Text style={styles.statValue}>73kg</Text>
+                <Text style={styles.statValue}>{profile.targetWeight ? `${profile.targetWeight}kg` : '—'}</Text>
                 <Text style={styles.statLabel}>Target Weight</Text>
                 <View style={styles.statBadge}>
-                  <Text style={styles.statBadgeText}>1kg to go</Text>
+                  <Text style={styles.statBadgeText}>{profile.targetWeight ? 'Goal set' : 'Set profile'}</Text>
                 </View>
               </View>
             </View>
@@ -94,13 +108,9 @@ export default function ProgressScreen() {
                 <TrendingUp size={24} color="#1a4431" />
                 <Text style={styles.chartTitle}>Weight Progress</Text>
               </View>
-              <View style={styles.chartPlaceholder}>
-                <Text style={styles.chartPlaceholderText}>
-                  📈 Weight tracking chart would appear here
-                </Text>
-                <Text style={styles.chartSubtext}>
-                  Showing 7-day progress trend
-                </Text>
+                <View style={styles.chartPlaceholder}>
+                <Text style={styles.chartPlaceholderText}>Weekly trend is now backed by live meal logs</Text>
+                <Text style={styles.chartSubtext}>{insights ? `${Math.round((insights.adherence_score || 0) * 100)}% adherence` : 'No tracked meals yet'}</Text>
               </View>
             </View>
 
@@ -111,10 +121,10 @@ export default function ProgressScreen() {
               </View>
               <View style={styles.chartPlaceholder}>
                 <Text style={styles.chartPlaceholderText}>
-                  📊 Calorie intake chart would appear here
+                  {insights ? `Avg calories ${Math.round(insights.avg_calories || 0)}` : 'Calorie chart waits for logged meals'}
                 </Text>
                 <Text style={styles.chartSubtext}>
-                  Daily calories vs target
+                  Compare intake against your target
                 </Text>
               </View>
             </View>
@@ -127,46 +137,42 @@ export default function ProgressScreen() {
             <View style={styles.chartCard}>
               <Text style={styles.chartTitle}>Macro Distribution</Text>
               <View style={styles.chartPlaceholder}>
-                <Text style={styles.chartPlaceholderText}>
-                  🥧 Macro pie chart would appear here
-                </Text>
-                <Text style={styles.chartSubtext}>
-                  Protein, Carbs, Fats breakdown
-                </Text>
+                <Text style={styles.chartPlaceholderText}>Macro distribution is derived from profile targets</Text>
+                <Text style={styles.chartSubtext}>Protein, carbs, and fats breakdown</Text>
               </View>
               
               <View style={styles.macroLegend}>
                 <View style={styles.macroItem}>
                   <View style={[styles.macroColor, { backgroundColor: '#1a4431' }]} />
                   <Text style={styles.macroLabel}>Protein</Text>
-                  <Text style={styles.macroValue}>35%</Text>
+                  <Text style={styles.macroValue}>{profile.targetProtein ? `${Math.round((profile.targetProtein / (profile.targetProtein + profile.targetCarbs + profile.targetFats)) * 100)}%` : '—'}</Text>
                 </View>
                 <View style={styles.macroItem}>
                   <View style={[styles.macroColor, { backgroundColor: '#d4af37' }]} />
                   <Text style={styles.macroLabel}>Carbs</Text>
-                  <Text style={styles.macroValue}>45%</Text>
+                  <Text style={styles.macroValue}>{profile.targetCarbs ? `${Math.round((profile.targetCarbs / (profile.targetProtein + profile.targetCarbs + profile.targetFats)) * 100)}%` : '—'}</Text>
                 </View>
                 <View style={styles.macroItem}>
                   <View style={[styles.macroColor, { backgroundColor: '#6b7280' }]} />
                   <Text style={styles.macroLabel}>Fats</Text>
-                  <Text style={styles.macroValue}>20%</Text>
+                  <Text style={styles.macroValue}>{profile.targetFats ? `${Math.round((profile.targetFats / (profile.targetProtein + profile.targetCarbs + profile.targetFats)) * 100)}%` : '—'}</Text>
                 </View>
               </View>
             </View>
 
             <View style={styles.statsGrid}>
               <View style={styles.statCard}>
-                <Text style={styles.statValue}>142g</Text>
+                <Text style={styles.statValue}>{insights?.avg_protein ? `${Math.round(insights.avg_protein)}g` : '—'}</Text>
                 <Text style={styles.statLabel}>Avg Daily Protein</Text>
                 <View style={styles.statBadge}>
-                  <Text style={styles.statBadgeText}>Above target</Text>
+                  <Text style={styles.statBadgeText}>{insights?.avg_protein ? (profile.targetProtein && insights.avg_protein > profile.targetProtein ? 'Above target' : 'On track') : 'No logs yet'}</Text>
                 </View>
               </View>
               <View style={styles.statCard}>
-                <Text style={styles.statValue}>1,950</Text>
+                <Text style={styles.statValue}>{insights?.avg_calories ? Math.round(insights.avg_calories).toLocaleString() : '—'}</Text>
                 <Text style={styles.statLabel}>Avg Daily Calories</Text>
                 <View style={styles.statBadge}>
-                  <Text style={styles.statBadgeText}>On track</Text>
+                  <Text style={styles.statBadgeText}>{insights ? 'Live data' : 'No logs yet'}</Text>
                 </View>
               </View>
             </View>

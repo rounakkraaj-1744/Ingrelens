@@ -14,31 +14,9 @@ import { BlurView } from 'expo-blur';
 import { Clock, Users, Zap, Heart, Search, X, TrendingUp } from 'lucide-react-native';
 import { useApp } from '@/context/AppContext';
 
-const categories = [
-  { name: 'High Protein', color: '#8B5CF6', count: 24 },
-  { name: 'Low Carb', color: '#10B981', count: 18 },
-  { name: 'Quick & Easy', color: '#F59E0B', count: 32 },
-  { name: 'Vegetarian', color: '#EF4444', count: 15 },
-];
-
-const searchSuggestions = [
-  'High protein recipes',
-  'Low carb meals', 
-  'Vegetarian options',
-  'Quick 15-minute meals',
-  'Mediterranean diet',
-  'Keto-friendly recipes',
-  'Meal prep ideas',
-  'Gluten-free options',
-];
-
-const trendingSearches = [
-  'Quinoa bowl',
-  'Salmon recipes',
-  'Chicken breast',
-  'Avocado toast',
-  'Green smoothie',
-];
+function recipeTagsToSuggestions(sourceRecipes: { tags: string[] }[]) {
+  return sourceRecipes.flatMap((recipe) => recipe.tags.map((tag) => tag.replace('-', ' ')));
+}
 
 export default function RecipesScreen() {
   const { recipes, toggleRecipeLike, selectedIngredientNames, profile } = useApp();
@@ -62,6 +40,33 @@ export default function RecipesScreen() {
       recipe.tags.some((tag) => tag.toLowerCase().includes(searchText.toLowerCase()))
     );
   }, [recipes, searchText, selectedIngredientNames]);
+
+  const categories = useMemo(() => {
+    const counts = recipes.reduce<Record<string, number>>((acc, recipe) => {
+      recipe.tags.forEach((tag) => {
+        acc[tag] = (acc[tag] || 0) + 1;
+      });
+      return acc;
+    }, {});
+
+    return Object.entries(counts).slice(0, 4).map(([name, count], index) => ({
+      name,
+      color: ['#8B5CF6', '#10B981', '#F59E0B', '#EF4444'][index % 4],
+      count,
+    }));
+  }, [recipes]);
+
+  const searchSuggestions = useMemo(() => {
+    const suggestions = new Set<string>();
+    selectedIngredientNames.forEach((name) => suggestions.add(name));
+    recipes.slice(0, 5).forEach((recipe) => suggestions.add(recipe.title));
+    recipeTagsToSuggestions(recipes).forEach((item) => suggestions.add(item));
+    return Array.from(suggestions).slice(0, 8);
+  }, [recipes, selectedIngredientNames]);
+
+  const trendingSearches = useMemo(() => {
+    return recipes.slice(0, 5).map((recipe) => recipe.title);
+  }, [recipes]);
 
   const handleSearch = (text: string) => {
     setSearchText(text);
@@ -93,7 +98,7 @@ export default function RecipesScreen() {
         <View style={styles.header}>
           <Text style={styles.title}>Recipe Suggestions</Text>
           <Text style={styles.subtitle}>
-            Based on your detected ingredients and a {profile.dailyCalories} kcal target
+            {profile.email ? `Based on your detected ingredients and a ${profile.dailyCalories} kcal target` : 'Recipes will appear after you scan ingredients or add pantry items'}
           </Text>
         </View>
 
@@ -158,15 +163,22 @@ export default function RecipesScreen() {
         {/* Categories */}
         <View style={styles.categoriesSection}>
           <Text style={styles.sectionTitle}>Categories</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoriesScroll}>
-            {categories.map((category, index) => (
-              <TouchableOpacity key={index} style={[styles.categoryCard, { backgroundColor: category.color + '20' }]}>
-                <View style={[styles.categoryDot, { backgroundColor: category.color }]} />
-                <Text style={styles.categoryName}>{category.name}</Text>
-                <Text style={styles.categoryCount}>{category.count} recipes</Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
+          {categories.length > 0 ? (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoriesScroll}>
+              {categories.map((category, index) => (
+                <TouchableOpacity key={index} style={[styles.categoryCard, { backgroundColor: category.color + '20' }]}>
+                  <View style={[styles.categoryDot, { backgroundColor: category.color }]} />
+                  <Text style={styles.categoryName}>{category.name}</Text>
+                  <Text style={styles.categoryCount}>{category.count} recipes</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          ) : (
+            <View style={styles.noResultsContainer}>
+              <Text style={styles.noResultsText}>No categories yet</Text>
+              <Text style={styles.noResultsSubtext}>Scan ingredients to generate personalized recipe groups.</Text>
+            </View>
+          )}
         </View>
 
         {/* Recipes */}

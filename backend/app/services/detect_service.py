@@ -4,6 +4,8 @@ from pathlib import Path
 import time
 from typing import List, Dict
 import json
+from app.services.food_catalog_service import food_catalog_service
+from app.services.meal_analysis_service import meal_analysis_service
 
 ml_path = Path(__file__).parent.parent.parent / "ml"
 sys.path.append(str(ml_path))
@@ -53,14 +55,30 @@ class IngredientDetectionService:
         
         try:
             if self.detector is None:
+                ingredient_names = ["tomato", "onion", "garlic", "spinach"]
+                ingredients = []
+                for index, name in enumerate(ingredient_names):
+                    catalog = food_catalog_service.find(name)
+                    ingredients.append({
+                        "ingredient": catalog.canonical_name if catalog else name,
+                        "display_name": catalog.name if catalog else name,
+                        "category": catalog.category if catalog else "unknown",
+                        "subcategory": catalog.subcategory if catalog else "unknown",
+                        "confidence": round(0.95 - index * 0.05, 2),
+                        "bbox": [80 + index * 60, 80, 150 + index * 60, 150],
+                        "nutrition_hint": {
+                            "calories_per_100g": catalog.calories_per_100g if catalog else 0,
+                            "protein_g": catalog.protein_g if catalog else 0,
+                        },
+                    })
+                meal_summary = meal_analysis_service.analyze([item["ingredient"] for item in ingredients], goal="maintain")
                 return {
-                    "ingredients": [
-                        {"ingredient": "tomato", "confidence": 0.85, "bbox": [100, 100, 200, 200]},
-                        {"ingredient": "onion", "confidence": 0.78, "bbox": [220, 150, 300, 230]}
-                    ],
-                    "detected_count": 2,
+                    "ingredients": ingredients,
+                    "detected_count": len(ingredients),
                     "processing_time_ms": round((time.time() - start_time) * 1000, 2),
-                    "status": "mock_data"
+                    "status": "mock_data",
+                    "meal_summary": meal_summary,
+                    "suggestions": meal_summary["suggestions"],
                 }
             
             detections = self.detector.predict_from_bytes(image_bytes)
@@ -71,7 +89,9 @@ class IngredientDetectionService:
                 "ingredients": detections,
                 "detected_count": len(detections),
                 "processing_time_ms": round(processing_time, 2),
-                "status": "success"
+                "status": "success",
+                "meal_summary": meal_analysis_service.analyze([d.get("ingredient", "") for d in detections]),
+                "suggestions": ["Confirm the detected items to improve the estimate."]
             }
             
         except Exception as e:

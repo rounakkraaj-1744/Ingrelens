@@ -20,16 +20,31 @@ import {
 import { useApp } from '@/context/AppContext';
 
 export default function PantryScreen() {
-  const { pantryItems } = useApp();
+  const { pantryItems, profile } = useApp();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'pantry' | 'shopping'>('pantry');
 
   const shoppingList = [
-    { id: '1', name: 'Salmon Fillet', category: 'Protein', needed: true },
-    { id: '2', name: 'Avocados', category: 'Vegetables', needed: true },
-    { id: '3', name: 'Brown Rice', category: 'Grains', needed: true },
-    { id: '4', name: 'Almonds', category: 'Nuts', needed: false },
-    { id: '5', name: 'Olive Oil', category: 'Oils', needed: true },
+    ...pantryItems
+      .filter((item) => item.status !== 'fresh')
+      .map((item, index) => ({
+        id: `${item.id}-${index}`,
+        name: item.name,
+        category: item.category,
+        needed: true,
+      })),
+    {
+      id: 'goal-protein',
+      name: profile.fitnessGoal === 'cut' ? 'Greek Yogurt' : 'Chicken Breast',
+      category: 'Protein',
+      needed: true,
+    },
+    {
+      id: 'goal-carb',
+      name: profile.fitnessGoal === 'bulk' ? 'Quinoa' : 'Brown Rice',
+      category: 'Grains',
+      needed: profile.fitnessGoal !== 'maintain',
+    },
   ];
 
   const getStatusColor = (status: string) => {
@@ -58,7 +73,9 @@ export default function PantryScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Smart Pantry</Text>
-        <Text style={styles.headerSubtitle}>Track ingredients and plan shopping</Text>
+        <Text style={styles.headerSubtitle}>
+          {profile.email ? 'Track ingredients and plan shopping' : 'Your pantry will appear after you add items'}
+        </Text>
         
         <View style={styles.tabSelector}>
           <TouchableOpacity
@@ -111,8 +128,8 @@ export default function PantryScreen() {
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {activeTab === 'pantry' ? (
-          <View style={styles.pantryContent}>
-            <View style={styles.statsGrid}>
+            <View style={styles.pantryContent}>
+              <View style={styles.statsGrid}>
               <View style={styles.statCard}>
                 <View style={styles.statIcon}>
                   <Package size={24} color="#1a4431" />
@@ -149,7 +166,16 @@ export default function PantryScreen() {
                 </TouchableOpacity>
               </View>
 
-              {filteredItems.map((item) => (
+              <View style={styles.summaryCard}>
+                <Text style={styles.summaryTitle}>Smart summary</Text>
+                <Text style={styles.summaryText}>
+                  {pantryItems.length > 0
+                    ? `${pantryItems.filter(item => item.status === 'expiring').length} items need attention and ${pantryItems.filter(item => item.status === 'fresh').length} are ready to use.`
+                    : 'No pantry items yet. Add your first scan to begin tracking.'}
+                </Text>
+              </View>
+
+              {filteredItems.length > 0 ? filteredItems.map((item) => (
                 <View key={item.id} style={styles.pantryItem}>
                   <View style={styles.itemContent}>
                     <View style={styles.itemInfo}>
@@ -175,7 +201,12 @@ export default function PantryScreen() {
                     </View>
                   </View>
                 </View>
-              ))}
+              )) : (
+                <View style={styles.emptyState}>
+                  <Text style={styles.emptyStateTitle}>No pantry items</Text>
+                  <Text style={styles.emptyStateText}>Scan ingredients or add items manually to start building your pantry.</Text>
+                </View>
+              )}
             </View>
           </View>
         ) : (
@@ -190,6 +221,12 @@ export default function PantryScreen() {
             </View>
 
             <View style={styles.shoppingList}>
+              {shoppingList.length === 0 ? (
+                <View style={styles.emptyState}>
+                  <Text style={styles.emptyStateTitle}>Shopping list is empty</Text>
+                  <Text style={styles.emptyStateText}>Your shopping suggestions will appear after you add pantry items or set a goal.</Text>
+                </View>
+              ) : null}
               {shoppingList.map((item) => (
                 <View key={item.id} style={styles.shoppingItem}>
                   <View style={styles.shoppingItemContent}>
@@ -347,6 +384,45 @@ const styles = StyleSheet.create({
   },
   itemsList: {
     gap: 16,
+  },
+  summaryCard: {
+    backgroundColor: '#edf7f1',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#cde6d7',
+  },
+  summaryTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1a4431',
+    marginBottom: 4,
+  },
+  summaryText: {
+    fontSize: 14,
+    color: '#4b5563',
+    lineHeight: 20,
+  },
+  emptyState: {
+    paddingVertical: 24,
+    paddingHorizontal: 16,
+    borderRadius: 16,
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    alignItems: 'center',
+  },
+  emptyStateTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1f2937',
+    marginBottom: 8,
+  },
+  emptyStateText: {
+    fontSize: 14,
+    color: '#6b7280',
+    textAlign: 'center',
+    lineHeight: 20,
   },
   sectionHeader: {
     flexDirection: 'row',

@@ -72,3 +72,24 @@ class DetectionLog(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
     user = relationship("User", back_populates="detection_logs")
+
+
+class MealLog(Base):
+    __tablename__ = "meal_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+
+    meal_name = Column(String, nullable=False)
+    meal_type = Column(String, default="snack")
+    source = Column(String, default="manual")
+    ingredients = Column(Text)
+    nutrition_summary = Column(Text)
+    confidence = Column(Float, default=0.5)
+    image_path = Column(String, nullable=True)
+    notes = Column(Text, nullable=True)
+
+    eaten_at = Column(DateTime(timezone=True), server_default=func.now())
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    user = relationship("User")

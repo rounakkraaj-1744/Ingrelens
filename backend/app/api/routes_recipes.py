@@ -8,6 +8,7 @@ from app.db.models import User, DetectionLog
 from app.schemas import Recipe
 from app.api.routes_auth import get_current_user
 from app.services.recipe_service import groq_recipe_service
+from app.services.food_catalog_service import food_catalog_service
 
 router = APIRouter()
 
@@ -135,6 +136,18 @@ async def suggest_complementary_ingredients(base_ingredients: List[str], current
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Ingredient suggestion failed: {str(e)}"
         )
+
+@router.get("/alternatives")
+async def recipe_alternatives(item: str):
+    return {
+        "item": item,
+        "substitutions": food_catalog_service.suggest_substitutions(item),
+        "use_cases": [
+            "lower calorie version",
+            "high protein version",
+            "budget version",
+        ]
+    }
 
 @router.get("/history")
 async def get_recipe_generation_history(current_user: User = Depends(get_current_user), db: Session = Depends(get_db), limit: int = Query(20, ge=1, le=100)):

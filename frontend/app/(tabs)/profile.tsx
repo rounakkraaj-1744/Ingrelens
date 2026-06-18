@@ -30,6 +30,7 @@ import { useApp } from '@/context/AppContext';
 export default function ProfileScreen() {
   const { profile } = useApp();
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const hasProfile = Boolean(profile.email || profile.name);
 
   const getGoalEmoji = () => {
     switch (profile?.fitnessGoal) {
@@ -87,15 +88,15 @@ export default function ProfileScreen() {
           <View style={styles.avatarContainer}>
             <View style={styles.avatar}>
               <Text style={styles.avatarText}>
-                {profile?.name?.charAt(0)?.toUpperCase() || 'U'}
+                {profile?.name?.charAt(0)?.toUpperCase() || '?'}
               </Text>
               <View style={styles.crownBadge}>
                 <Crown size={12} color="white" />
               </View>
             </View>
           </View>
-          <Text style={styles.userName}>{profile?.name || 'User'}</Text>
-          <Text style={styles.userEmail}>{profile?.email}</Text>
+          <Text style={styles.userName}>{profile?.name || 'Create your profile'}</Text>
+          <Text style={styles.userEmail}>{profile?.email || 'No account connected yet'}</Text>
         </View>
 
         <View style={styles.content}>
@@ -110,22 +111,22 @@ export default function ProfileScreen() {
             
             <View style={styles.metricsGrid}>
               <View style={styles.metricItem}>
-                <Text style={styles.metricValue}>{profile?.weight}kg</Text>
+                <Text style={styles.metricValue}>{profile?.weight ? `${profile.weight}kg` : '—'}</Text>
                 <Text style={styles.metricLabel}>Weight</Text>
               </View>
               
               <View style={styles.metricItem}>
-                <Text style={styles.metricValue}>{profile?.height}cm</Text>
+                <Text style={styles.metricValue}>{profile?.height ? `${profile.height}cm` : '—'}</Text>
                 <Text style={styles.metricLabel}>Height</Text>
               </View>
               
               <View style={styles.metricItem}>
-                <Text style={styles.metricValue}>{profile?.age}</Text>
+                <Text style={styles.metricValue}>{profile?.age || '—'}</Text>
                 <Text style={styles.metricLabel}>Age</Text>
               </View>
               
               <View style={styles.metricItem}>
-                <Text style={styles.metricValue}>{profile?.dailyCalories}</Text>
+                <Text style={styles.metricValue}>{profile?.dailyCalories || '—'}</Text>
                 <Text style={styles.metricLabel}>Daily Calories</Text>
               </View>
             </View>
@@ -134,17 +135,17 @@ export default function ProfileScreen() {
           <View style={styles.goalsGrid}>
             <View style={styles.goalCard}>
               <Target size={24} color="#1a4431" />
-              <Text style={styles.goalLabel}>Fitness Goal</Text>
-              <View style={styles.goalValue}>
-                <Text style={styles.goalEmoji}>{getGoalEmoji()}</Text>
-                <Text style={styles.goalText}>{profile?.fitnessGoal}</Text>
+                <Text style={styles.goalLabel}>Fitness Goal</Text>
+                <View style={styles.goalValue}>
+                  <Text style={styles.goalEmoji}>{getGoalEmoji()}</Text>
+                <Text style={styles.goalText}>{hasProfile ? profile?.fitnessGoal : 'Set a goal'}</Text>
               </View>
             </View>
 
             <View style={styles.goalCard}>
               <Activity size={24} color="#d4af37" />
               <Text style={styles.goalLabel}>Activity Level</Text>
-              <Text style={styles.goalText}>{getActivityLevelText()}</Text>
+              <Text style={styles.goalText}>{hasProfile ? getActivityLevelText() : 'Add profile details'}</Text>
             </View>
           </View>
 
@@ -257,6 +258,12 @@ export default function ProfileScreen() {
               <Text style={styles.versionText}>NutriLens Premium v1.0.0</Text>
             </View>
           </View>
+          {!hasProfile ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyStateTitle}>Profile not set up</Text>
+              <Text style={styles.emptyStateText}>Complete onboarding to unlock nutrition targets, streaks, and personalized recommendations.</Text>
+            </View>
+          ) : null}
         </View>
       </ScrollView>
     </SafeAreaView>

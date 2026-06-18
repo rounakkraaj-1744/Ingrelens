@@ -61,6 +61,9 @@ class DetectionResponse(BaseModel):
     ingredients: List[IngredientDetection]
     detected_count: int
     processing_time_ms: float
+    status: Optional[str] = None
+    meal_summary: Optional[Dict[str, object]] = None
+    suggestions: Optional[List[str]] = None
 
 class RecipeBase(BaseModel):
     name: str
@@ -89,3 +92,58 @@ class RecipeRecommendation(BaseModel):
     matched_ingredients: List[str]
     missing_ingredients: List[str]
     nutrition_alignment: Dict[str, float]
+
+class FoodMatch(BaseModel):
+    name: str
+    canonical_name: str
+    category: str
+    subcategory: str
+    calories_per_100g: float
+    protein_g: float
+    carbs_g: float
+    fats_g: float
+    fiber_g: float = 0
+    allergens: List[str] = []
+    dietary_tags: List[str] = []
+
+class MealComponent(BaseModel):
+    name: str
+    canonical_name: str
+    estimated_grams: float
+    confidence: float
+    nutrition: Dict[str, float]
+
+class MealAnalysis(BaseModel):
+    meal_name: str
+    meal_type: str
+    total_nutrition: Dict[str, float]
+    components: List[MealComponent]
+    confidence: float
+    alternatives: List[Dict[str, str]]
+    warnings: List[str]
+    suggestions: List[str]
+
+class PantryRecommendation(BaseModel):
+    item: str
+    reason: str
+    priority: str
+    expires_in_days: Optional[int] = None
+
+class MealLogCreate(BaseModel):
+    meal_name: str
+    meal_type: str = "snack"
+    source: str = "manual"
+    ingredients: List[str] = []
+    nutrition_summary: Dict[str, float] = {}
+    confidence: float = 0.5
+    notes: Optional[str] = None
+
+class WeeklyInsight(BaseModel):
+    period: str
+    avg_calories: float
+    avg_protein: float
+    target_calories: Optional[float] = None
+    target_protein: Optional[float] = None
+    adherence_score: float
+    top_foods: List[str]
+    recommendations: List[str]

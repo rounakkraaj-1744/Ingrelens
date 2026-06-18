@@ -1,35 +1,43 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { Search, Filter, X } from 'lucide-react-native';
-
-const searchSuggestions = [
-  'High protein recipes',
-  'Low carb meals',
-  'Vegetarian options',
-  'Quick 15-minute meals',
-  'Meal prep ideas',
-];
-
-const recentSearches = [
-  'Chicken breast',
-  'Quinoa bowl',
-  'Salmon recipes',
-  'Green smoothie',
-];
-
-const trendingIngredients = [
-  { name: 'Avocado', image: 'https://images.pexels.com/photos/557659/pexels-photo-557659.jpeg', recipes: 45 },
-  { name: 'Spinach', image: 'https://images.pexels.com/photos/2325843/pexels-photo-2325843.jpeg', recipes: 32 },
-  { name: 'Chicken', image: 'https://images.pexels.com/photos/616353/pexels-photo-616353.jpeg', recipes: 78 },
-  { name: 'Sweet Potato', image: 'https://images.pexels.com/photos/89247/pexels-photo-89247.jpeg', recipes: 28 },
-];
+import { useApp } from '@/context/AppContext';
 
 export default function SearchScreen() {
+  const { recipes, pantryItems, profile } = useApp();
   const [searchText, setSearchText] = useState('');
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
-  
-  const filters = ['Vegetarian', 'High Protein', 'Low Carb', 'Quick & Easy', 'Dairy Free'];
+  const filters = useMemo(() => {
+    const dynamic = new Set<string>();
+    recipes.forEach((recipe) => recipe.tags.forEach((tag) => dynamic.add(tag)));
+    dynamic.add(profile.fitnessGoal === 'cut' ? 'low carb' : 'high protein');
+    return Array.from(dynamic).slice(0, 8);
+  }, [recipes, profile.fitnessGoal]);
+
+  const searchSuggestions = useMemo(() => {
+    const suggestions = new Set<string>();
+    recipes.slice(0, 5).forEach((recipe) => suggestions.add(recipe.title));
+    pantryItems.slice(0, 4).forEach((item) => suggestions.add(item.name));
+    return Array.from(suggestions).slice(0, 6);
+  }, [recipes, pantryItems]);
+
+  const recentSearches = useMemo(() => {
+    return recipes.slice(0, 4).map((recipe) => recipe.title);
+  }, [recipes]);
+
+  const trendingIngredients = useMemo(() => {
+    return pantryItems.slice(0, 4).map((item, index) => ({
+      name: item.name,
+      image: [
+        'https://images.pexels.com/photos/557659/pexels-photo-557659.jpeg',
+        'https://images.pexels.com/photos/2325843/pexels-photo-2325843.jpeg',
+        'https://images.pexels.com/photos/616353/pexels-photo-616353.jpeg',
+        'https://images.pexels.com/photos/89247/pexels-photo-89247.jpeg',
+      ][index % 4],
+      recipes: Math.max(8, 25 - index * 3),
+    }));
+  }, [pantryItems]);
 
   const toggleFilter = (filter: string) => {
     setActiveFilters(prev => 

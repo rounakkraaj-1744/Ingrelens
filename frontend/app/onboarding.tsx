@@ -8,10 +8,9 @@ import {
   ScrollView,
   Alert,
   KeyboardAvoidingView,
-  Platform,
-  Dimensions
+  Platform
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { BlurView } from 'expo-blur';
@@ -31,6 +30,7 @@ interface UserProfile {
 
 export default function OnboardingScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { setProfile: updateProfile } = useApp();
   const [step, setStep] = useState(0);
   const [profile, setProfile] = useState<UserProfile>({
@@ -182,7 +182,7 @@ export default function OnboardingScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
       <Image
         source={{ uri: 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg' }}
         style={styles.backgroundImage}
@@ -226,7 +226,7 @@ export default function OnboardingScreen() {
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </View>
   );
 }
 

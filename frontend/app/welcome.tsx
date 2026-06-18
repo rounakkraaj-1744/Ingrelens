@@ -1,17 +1,11 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Image,
-  ScrollView,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, TouchableOpacity, StyleSheet, Image, ScrollView } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Leaf, Sparkles, Camera, ChefHat, Target } from 'lucide-react-native';
 
 export default function WelcomeScreen() {
+  const insets = useSafeAreaInsets();
   const handleLogin = () => {
     router.push('/login');
   };
@@ -21,7 +15,7 @@ export default function WelcomeScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
       {/* Background Image */}
       <View style={styles.backgroundContainer}>
         <Image
@@ -90,7 +84,7 @@ export default function WelcomeScreen() {
           By continuing, you agree to our Terms of Service and Privacy Policy
         </Text>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 

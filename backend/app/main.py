@@ -9,6 +9,10 @@ from app.api.routes_auth import router as auth_router
 from app.api.routes_detect import router as detect_router
 from app.api.routes_recipes import router as recipes_router
 from app.api.routes_nutrition import router as nutrition_router
+from app.api.routes_food import router as food_router
+from app.api.routes_pantry import router as pantry_router
+from app.api.routes_insights import router as insights_router
+from app.api.routes_meals import router as meals_router
 
 # database
 from app.db.database import engine, Base
@@ -49,6 +53,10 @@ app.include_router(auth_router, prefix="/api/auth", tags=["Authentication"])
 app.include_router(detect_router, prefix="/api/detect", tags=["Detection"])
 app.include_router(recipes_router, prefix="/api/recipes", tags=["AI Recipes"])
 app.include_router(nutrition_router, prefix="/api/nutrition", tags=["Nutrition"])
+app.include_router(food_router, prefix="/api/food", tags=["Food Intelligence"])
+app.include_router(pantry_router, prefix="/api/pantry", tags=["Pantry"])
+app.include_router(insights_router, prefix="/api/insights", tags=["Insights"])
+app.include_router(meals_router, prefix="/api/meals", tags=["Meals"])
 
 @app.get("/")
 async def root():
