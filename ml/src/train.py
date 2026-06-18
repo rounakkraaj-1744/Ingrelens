@@ -8,7 +8,7 @@ def load_config(config_path):
         return yaml.safe_load(file)
 
 def train_model():
-    config = load_config('ml/config/detector_config.yml')
+    config = load_config('ml/configs/detector_config.yaml')
     
     data_config = {
         'path': os.path.abspath(config['dataset']['path']),

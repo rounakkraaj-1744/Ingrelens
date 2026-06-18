@@ -96,7 +96,7 @@ class IngredientDetector:
 if __name__ == "__main__":
     detector = IngredientDetector(
         'ml/models/ingredient_detector.pt',
-        'ml/config/detector_config.yml'
+        'ml/configs/detector_config.yaml'
     )
     
     results = detector.predict('ml/data/test_image.jpg')
