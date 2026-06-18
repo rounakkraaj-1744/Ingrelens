@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -12,61 +12,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { Clock, Users, Zap, Heart, Search, X, TrendingUp } from 'lucide-react-native';
-
-const recipes = [
-  {
-    id: 1,
-    title: 'Mediterranean Quinoa Bowl',
-    image: 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg',
-    time: '25 mins',
-    servings: 2,
-    calories: 420,
-    protein: '18g',
-    carbs: '45g',
-    fat: '15g',
-    difficulty: 'Easy',
-    liked: false,
-  },
-  {
-    id: 2,
-    title: 'Grilled Salmon with Asparagus',
-    image: 'https://images.pexels.com/photos/1640772/pexels-photo-1640772.jpeg',
-    time: '20 mins',
-    servings: 1,
-    calories: 380,
-    protein: '32g',
-    carbs: '8g',
-    fat: '24g',
-    difficulty: 'Medium',
-    liked: true,
-  },
-  {
-    id: 3,
-    title: 'Chicken & Veggie Stir Fry',
-    image: 'https://images.pexels.com/photos/1566837/pexels-photo-1566837.jpeg',
-    time: '15 mins',
-    servings: 3,
-    calories: 290,
-    protein: '28g',
-    carbs: '12g',
-    fat: '14g',
-    difficulty: 'Easy',
-    liked: false,
-  },
-  {
-    id: 4,
-    title: 'Avocado Toast Supreme',
-    image: 'https://images.pexels.com/photos/557659/pexels-photo-557659.jpeg',
-    time: '10 mins',
-    servings: 1,
-    calories: 320,
-    protein: '12g',
-    carbs: '28g',
-    fat: '18g',
-    difficulty: 'Easy',
-    liked: true,
-  },
-];
+import { useApp } from '@/context/AppContext';
 
 const categories = [
   { name: 'High Protein', color: '#8B5CF6', count: 24 },
@@ -95,40 +41,41 @@ const trendingSearches = [
 ];
 
 export default function RecipesScreen() {
+  const { recipes, toggleRecipeLike, selectedIngredientNames, profile } = useApp();
   const [searchText, setSearchText] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [filteredRecipes, setFilteredRecipes] = useState(recipes);
+  const filteredRecipes = useMemo(() => {
+    const ingredientFiltered = recipes.filter((recipe) =>
+      selectedIngredientNames.length === 0
+        ? true
+        : recipe.ingredients.some((ingredient) =>
+            selectedIngredientNames.some((selected) =>
+              ingredient.toLowerCase().includes(selected.toLowerCase()) ||
+              selected.toLowerCase().includes(ingredient.toLowerCase())
+            )
+          )
+    );
+
+    if (!searchText) return ingredientFiltered;
+    return ingredientFiltered.filter((recipe) =>
+      recipe.title.toLowerCase().includes(searchText.toLowerCase()) ||
+      recipe.tags.some((tag) => tag.toLowerCase().includes(searchText.toLowerCase()))
+    );
+  }, [recipes, searchText, selectedIngredientNames]);
 
   const handleSearch = (text: string) => {
     setSearchText(text);
-    if (text.length > 0) {
-      setShowSuggestions(true);
-      const filtered = recipes.filter(recipe =>
-        recipe.title.toLowerCase().includes(text.toLowerCase())
-      );
-      setFilteredRecipes(filtered);
-    } else {
-      setShowSuggestions(false);
-      setFilteredRecipes(recipes);
-    }
+    setShowSuggestions(text.length > 0);
   };
 
   const handleSuggestionPress = (suggestion: string) => {
     setSearchText(suggestion);
     setShowSuggestions(false);
-    const filtered = recipes.filter(recipe =>
-      recipe.title.toLowerCase().includes(suggestion.toLowerCase()) ||
-      suggestion.toLowerCase().includes('protein') && parseInt(recipe.protein) > 20 ||
-      suggestion.toLowerCase().includes('quick') && parseInt(recipe.time) <= 15 ||
-      suggestion.toLowerCase().includes('low carb') && parseInt(recipe.carbs) < 15
-    );
-    setFilteredRecipes(filtered);
   };
 
   const clearSearch = () => {
     setSearchText('');
     setShowSuggestions(false);
-    setFilteredRecipes(recipes);
   };
 
   const renderSuggestionItem = ({ item }: { item: string }) => (
@@ -145,7 +92,9 @@ export default function RecipesScreen() {
       <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <Text style={styles.title}>Recipe Suggestions</Text>
-          <Text style={styles.subtitle}>Based on your detected ingredients</Text>
+          <Text style={styles.subtitle}>
+            Based on your detected ingredients and a {profile.dailyCalories} kcal target
+          </Text>
         </View>
 
         <View style={styles.searchSection}>
@@ -240,7 +189,7 @@ export default function RecipesScreen() {
                   style={styles.recipeGradient}
                 />
                 
-                <TouchableOpacity style={styles.likeButton}>
+                <TouchableOpacity style={styles.likeButton} onPress={() => toggleRecipeLike(String(recipe.id))}>
                   <Heart size={20} color={recipe.liked ? '#EF4444' : '#FFFFFF'} fill={recipe.liked ? '#EF4444' : 'transparent'} strokeWidth={2} />
                 </TouchableOpacity>
                 

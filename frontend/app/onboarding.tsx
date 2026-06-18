@@ -1,4 +1,3 @@
-import React, { useState } from 'react';
 import { 
   View, 
   Text, 
@@ -7,14 +6,17 @@ import {
   TouchableOpacity, 
   Image, 
   ScrollView,
-  Dimensions,
-  Alert
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  Dimensions
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { BlurView } from 'expo-blur';
-
-const { width, height } = Dimensions.get('window');
+import { useApp } from '@/context/AppContext';
+import { useState } from 'react';
 
 interface UserProfile {
   name: string;
@@ -29,6 +31,7 @@ interface UserProfile {
 
 export default function OnboardingScreen() {
   const router = useRouter();
+  const { setProfile: updateProfile } = useApp();
   const [step, setStep] = useState(0);
   const [profile, setProfile] = useState<UserProfile>({
     name: '',
@@ -45,9 +48,22 @@ export default function OnboardingScreen() {
     if (step < 2)
       setStep(step + 1);
     else {
-      if (profile.name && profile.email && profile.age && profile.gender && profile.height && profile.weight && profile.goal)
+      if (profile.name && profile.email && profile.age && profile.gender && profile.height && profile.weight && profile.goal) {
+        updateProfile({
+          name: profile.name,
+          email: profile.email,
+          age: Number(profile.age),
+          gender: profile.gender.toLowerCase() as 'male' | 'female',
+          height: Number(profile.height),
+          weight: Number(profile.weight),
+          fitnessGoal: profile.goal.toLowerCase() as 'bulk' | 'cut' | 'maintain',
+          dailyCalories: profile.goal === 'Bulk' ? 2700 : profile.goal === 'Cut' ? 1900 : 2200,
+          targetProtein: profile.goal === 'Bulk' ? 170 : profile.goal === 'Cut' ? 145 : 130,
+          targetCarbs: profile.goal === 'Bulk' ? 320 : profile.goal === 'Cut' ? 180 : 240,
+          targetFats: profile.goal === 'Bulk' ? 80 : profile.goal === 'Cut' ? 65 : 70,
+        });
         router.replace('/(tabs)');
-      else
+      } else
         Alert.alert('Please fill all fields');
     }
   };
@@ -166,7 +182,7 @@ export default function OnboardingScreen() {
   );
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <Image
         source={{ uri: 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg' }}
         style={styles.backgroundImage}
@@ -180,8 +196,12 @@ export default function OnboardingScreen() {
         />
       </BlurView>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <View style={styles.progressContainer}>
+      <KeyboardAvoidingView 
+        style={{ flex: 1 }} 
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          <View style={styles.progressContainer}>
           {[0, 1, 2].map((index) => (
             <View
               key={index}
@@ -199,13 +219,14 @@ export default function OnboardingScreen() {
           {step === 2 && renderGoalStep()}
         </View>
 
-        <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
-          <Text style={styles.nextButtonText}>
-            {step === 2 ? 'Get Started' : 'Continue'}
-          </Text>
-        </TouchableOpacity>
-      </ScrollView>
-    </View>
+          <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
+            <Text style={styles.nextButtonText}>
+              {step === 2 ? 'Get Started' : 'Continue'}
+            </Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
@@ -215,15 +236,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#FEFCF8',
   },
   backgroundImage: {
-    position: 'absolute',
-    width: width,
-    height: height,
+    ...StyleSheet.absoluteFillObject,
     opacity: 0.4,
   },
   blurOverlay: {
-    position: 'absolute',
-    width: width,
-    height: height,
+    ...StyleSheet.absoluteFillObject,
   },
   gradientOverlay: {
     flex: 1,

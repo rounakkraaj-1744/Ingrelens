@@ -17,68 +17,12 @@ import {
   AlertTriangle,
   Check,
 } from 'lucide-react-native';
-
-interface PantryItem {
-  id: string;
-  name: string;
-  category: string;
-  quantity: number;
-  unit: string;
-  expiryDate: string;
-  status: 'fresh' | 'expiring' | 'expired';
-}
+import { useApp } from '@/context/AppContext';
 
 export default function PantryScreen() {
+  const { pantryItems } = useApp();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'pantry' | 'shopping'>('pantry');
-
-  const pantryItems: PantryItem[] = [
-    {
-      id: '1',
-      name: 'Chicken Breast',
-      category: 'Protein',
-      quantity: 2,
-      unit: 'lbs',
-      expiryDate: '2024-01-15',
-      status: 'fresh',
-    },
-    {
-      id: '2',
-      name: 'Bell Peppers',
-      category: 'Vegetables',
-      quantity: 3,
-      unit: 'pieces',
-      expiryDate: '2024-01-12',
-      status: 'expiring',
-    },
-    {
-      id: '3',
-      name: 'Greek Yogurt',
-      category: 'Dairy',
-      quantity: 1,
-      unit: 'container',
-      expiryDate: '2024-01-10',
-      status: 'expired',
-    },
-    {
-      id: '4',
-      name: 'Quinoa',
-      category: 'Grains',
-      quantity: 500,
-      unit: 'g',
-      expiryDate: '2024-06-01',
-      status: 'fresh',
-    },
-    {
-      id: '5',
-      name: 'Spinach',
-      category: 'Vegetables',
-      quantity: 1,
-      unit: 'bag',
-      expiryDate: '2024-01-11',
-      status: 'expiring',
-    },
-  ];
 
   const shoppingList = [
     { id: '1', name: 'Salmon Fillet', category: 'Protein', needed: true },

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -20,38 +20,10 @@ import {
   Zap,
   Bell,
 } from 'lucide-react-native';
-
-interface UserData {
-  name: string;
-  email: string;
-  age: number;
-  gender: string;
-  weight: number;
-  height: number;
-  activityLevel: string;
-  dietaryPreferences: string[];
-  fitnessGoal: 'bulk' | 'cut' | 'maintain';
-  dailyCalories: number;
-  streak: number;
-}
-
-// Mock user data
-const mockUserData: UserData = {
-  name: 'Alex Johnson',
-  email: 'alex@example.com',
-  age: 28,
-  gender: 'male',
-  weight: 75,
-  height: 180,
-  activityLevel: 'moderate',
-  dietaryPreferences: ['vegetarian'],
-  fitnessGoal: 'cut',
-  dailyCalories: 2000,
-  streak: 7,
-};
+import { useApp } from '@/context/AppContext';
 
 export default function HomeScreen() {
-  const [userData] = useState<UserData>(mockUserData);
+  const { profile } = useApp();
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -61,7 +33,7 @@ export default function HomeScreen() {
   };
 
   const getStreakMessage = () => {
-    const streak = userData?.streak || 0;
+    const streak = profile?.streak || 0;
     if (streak === 0) return 'Start your journey today!';
     if (streak === 1) return 'Great start! Keep it up!';
     if (streak < 7) return `${streak} days strong!`;
@@ -77,7 +49,7 @@ export default function HomeScreen() {
     Alert.alert('Notifications', 'You have 3 new notifications');
   };
 
-  const dailyCalories = userData?.dailyCalories || 2000;
+  const dailyCalories = profile?.dailyCalories || 2000;
   const consumedCalories = 1200;
   const calorieProgress = (consumedCalories / dailyCalories) * 100;
 
@@ -89,7 +61,7 @@ export default function HomeScreen() {
           <View style={styles.headerContent}>
             <View>
               <Text style={styles.greeting}>{getGreeting()}</Text>
-              <Text style={styles.userName}>{userData?.name || 'Welcome back'}</Text>
+              <Text style={styles.userName}>{profile?.name || 'Welcome back'}</Text>
             </View>
             <View style={styles.headerActions}>
               <TouchableOpacity
@@ -103,7 +75,7 @@ export default function HomeScreen() {
               </TouchableOpacity>
               <View style={styles.avatar}>
                 <Text style={styles.avatarText}>
-                  {userData?.name?.charAt(0) || 'U'}
+                  {profile?.name?.charAt(0) || 'U'}
                 </Text>
               </View>
             </View>
@@ -171,7 +143,7 @@ export default function HomeScreen() {
                   <Target size={20} color="#1a4431" />
                   <Text style={styles.streakTitle}>Streak</Text>
                 </View>
-                <Text style={styles.streakNumber}>{userData?.streak || 0}</Text>
+                <Text style={styles.streakNumber}>{profile?.streak || 0}</Text>
                 <Text style={styles.streakMessage}>{getStreakMessage()}</Text>
               </View>
               <View style={styles.streakIcon}>

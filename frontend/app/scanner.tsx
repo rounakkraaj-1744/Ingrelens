@@ -4,10 +4,10 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  SafeAreaView,
   Alert,
   ScrollView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
 import {
@@ -17,6 +17,7 @@ import {
   Check,
   Zap,
 } from 'lucide-react-native';
+import { useApp } from '@/context/AppContext';
 
 interface DetectedIngredient {
   name: string;
@@ -25,11 +26,11 @@ interface DetectedIngredient {
 }
 
 export default function ScannerScreen() {
+  const { detectedIngredients, updateScanFromIngredients, setSelectedIngredientNames, addPantryItemsFromScan } = useApp();
   const [isScanning, setIsScanning] = useState(false);
   const [hasScanned, setHasScanned] = useState(false);
-  const [detectedIngredients, setDetectedIngredients] = useState<DetectedIngredient[]>([]);
   const [permission, requestPermission] = useCameraPermissions();
-  const [facing, setFacing] = useState<CameraType>('back');
+  const [facing] = useState<CameraType>('back');
 
   const mockDetectedIngredients: DetectedIngredient[] = [
     { name: 'Tomatoes', confidence: 95, selected: true },
@@ -56,13 +57,13 @@ export default function ScannerScreen() {
     setTimeout(() => {
       setIsScanning(false);
       setHasScanned(true);
-      setDetectedIngredients(mockDetectedIngredients);
+      updateScanFromIngredients(mockDetectedIngredients);
     }, 3000);
   };
 
   const handleRetry = () => {
     setHasScanned(false);
-    setDetectedIngredients([]);
+    updateScanFromIngredients([]);
     setIsScanning(false);
   };
 
@@ -77,7 +78,9 @@ export default function ScannerScreen() {
   const selectedCount = detectedIngredients.filter(ing => ing.selected).length;
 
   const handleGenerateRecipe = () => {
-    router.push('/recipes');
+    setSelectedIngredientNames(detectedIngredients.filter(ing => ing.selected).map(ing => ing.name));
+    addPantryItemsFromScan(detectedIngredients);
+    router.push('/(tabs)/recipes');
   };
 
   const handleBack = () => {
@@ -373,8 +376,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   scanningFrame: {
-    width: 320,
-    height: 320,
+    width: '80%',
+    aspectRatio: 1,
     borderWidth: 2,
     borderColor: 'rgba(255, 255, 255, 0.5)',
     borderRadius: 16,

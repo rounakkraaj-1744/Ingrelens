@@ -4,9 +4,10 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  SafeAreaView,
   Image,
+  ScrollView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Leaf, Sparkles, Camera, ChefHat, Target } from 'lucide-react-native';
 
@@ -33,7 +34,7 @@ export default function WelcomeScreen() {
       </View>
 
       {/* Content */}
-      <View style={styles.content}>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {/* Logo and Branding */}
         <View style={styles.branding}>
           <View style={styles.logoContainer}>
@@ -88,7 +89,7 @@ export default function WelcomeScreen() {
         <Text style={styles.footer}>
           By continuing, you agree to our Terms of Service and Privacy Policy
         </Text>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -119,10 +120,11 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(250, 251, 252, 0.95)',
   },
   content: {
-    flex: 1,
+    flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 32,
+    paddingVertical: 48,
     zIndex: 1,
   },
   branding: {

@@ -5,13 +5,18 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  SafeAreaView,
   Alert,
+  KeyboardAvoidingView,
+  ScrollView,
+  Platform,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { ArrowLeft, Eye, EyeOff } from 'lucide-react-native';
+import { useApp } from '@/context/AppContext';
 
 export default function LoginScreen() {
+  const { setProfile } = useApp();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -21,6 +26,7 @@ export default function LoginScreen() {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
+    setProfile({ email });
     router.replace('/(tabs)');
   };
 
@@ -45,8 +51,12 @@ export default function LoginScreen() {
         <Text style={styles.headerTitle}>Welcome back</Text>
       </View>
 
-      <View style={styles.content}>
-        <View style={styles.titleSection}>
+      <KeyboardAvoidingView 
+        style={{ flex: 1 }} 
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+          <View style={styles.titleSection}>
           <Text style={styles.title}>Sign in to your account</Text>
           <Text style={styles.subtitle}>Continue your premium nutrition journey</Text>
         </View>
@@ -79,10 +89,7 @@ export default function LoginScreen() {
                 autoCapitalize="none"
                 autoCorrect={false}
               />
-              <TouchableOpacity
-                style={styles.eyeButton}
-                onPress={() => setShowPassword(!showPassword)}
-              >
+              <TouchableOpacity style={styles.eyeButton} onPress={() => setShowPassword(!showPassword)}>
                 {showPassword ? (
                   <EyeOff size={20} color="#9ca3af" />
                 ) : (
@@ -101,7 +108,6 @@ export default function LoginScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Social Login */}
         <View style={styles.socialSection}>
           <View style={styles.divider}>
             <View style={styles.dividerLine} />
@@ -119,7 +125,6 @@ export default function LoginScreen() {
           </View>
         </View>
 
-        {/* Sign up link */}
         <View style={styles.signUpSection}>
           <Text style={styles.signUpText}>
             Don&apos;t have an account?{' '}
@@ -128,7 +133,8 @@ export default function LoginScreen() {
             </Text>
           </Text>
         </View>
-      </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -157,9 +163,10 @@ const styles = StyleSheet.create({
     color: '#1f2937',
   },
   content: {
-    flex: 1,
+    flexGrow: 1,
     paddingHorizontal: 24,
     paddingTop: 32,
+    paddingBottom: 40,
   },
   titleSection: {
     marginBottom: 40,

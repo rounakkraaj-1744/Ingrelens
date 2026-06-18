@@ -25,36 +25,14 @@ import {
   Moon,
   Sun,
 } from 'lucide-react-native';
-
-interface UserData {
-  name: string;
-  email: string;
-  age: number;
-  weight: number;
-  height: number;
-  activityLevel: string;
-  fitnessGoal: 'bulk' | 'cut' | 'maintain';
-  dailyCalories: number;
-  streak: number;
-}
+import { useApp } from '@/context/AppContext';
 
 export default function ProfileScreen() {
+  const { profile } = useApp();
   const [isDarkMode, setIsDarkMode] = useState(false);
 
-  const userData: UserData = {
-    name: 'Alex Johnson',
-    email: 'alex@example.com',
-    age: 28,
-    weight: 75,
-    height: 180,
-    activityLevel: 'moderate',
-    fitnessGoal: 'cut',
-    dailyCalories: 2000,
-    streak: 7,
-  };
-
   const getGoalEmoji = () => {
-    switch (userData?.fitnessGoal) {
+    switch (profile?.fitnessGoal) {
       case 'bulk': return '💪';
       case 'cut': return '🔥';
       default: return '⚖️';
@@ -62,7 +40,7 @@ export default function ProfileScreen() {
   };
 
   const getActivityLevelText = () => {
-    switch (userData?.activityLevel) {
+    switch (profile?.activityLevel) {
       case 'sedentary': return 'Sedentary';
       case 'light': return 'Light activity';
       case 'moderate': return 'Moderate activity';
@@ -109,15 +87,15 @@ export default function ProfileScreen() {
           <View style={styles.avatarContainer}>
             <View style={styles.avatar}>
               <Text style={styles.avatarText}>
-                {userData?.name?.charAt(0)?.toUpperCase() || 'U'}
+                {profile?.name?.charAt(0)?.toUpperCase() || 'U'}
               </Text>
               <View style={styles.crownBadge}>
                 <Crown size={12} color="white" />
               </View>
             </View>
           </View>
-          <Text style={styles.userName}>{userData?.name || 'User'}</Text>
-          <Text style={styles.userEmail}>{userData?.email}</Text>
+          <Text style={styles.userName}>{profile?.name || 'User'}</Text>
+          <Text style={styles.userEmail}>{profile?.email}</Text>
         </View>
 
         <View style={styles.content}>
@@ -132,22 +110,22 @@ export default function ProfileScreen() {
             
             <View style={styles.metricsGrid}>
               <View style={styles.metricItem}>
-                <Text style={styles.metricValue}>{userData?.weight}kg</Text>
+                <Text style={styles.metricValue}>{profile?.weight}kg</Text>
                 <Text style={styles.metricLabel}>Weight</Text>
               </View>
               
               <View style={styles.metricItem}>
-                <Text style={styles.metricValue}>{userData?.height}cm</Text>
+                <Text style={styles.metricValue}>{profile?.height}cm</Text>
                 <Text style={styles.metricLabel}>Height</Text>
               </View>
               
               <View style={styles.metricItem}>
-                <Text style={styles.metricValue}>{userData?.age}</Text>
+                <Text style={styles.metricValue}>{profile?.age}</Text>
                 <Text style={styles.metricLabel}>Age</Text>
               </View>
               
               <View style={styles.metricItem}>
-                <Text style={styles.metricValue}>{userData?.dailyCalories}</Text>
+                <Text style={styles.metricValue}>{profile?.dailyCalories}</Text>
                 <Text style={styles.metricLabel}>Daily Calories</Text>
               </View>
             </View>
@@ -159,7 +137,7 @@ export default function ProfileScreen() {
               <Text style={styles.goalLabel}>Fitness Goal</Text>
               <View style={styles.goalValue}>
                 <Text style={styles.goalEmoji}>{getGoalEmoji()}</Text>
-                <Text style={styles.goalText}>{userData?.fitnessGoal}</Text>
+                <Text style={styles.goalText}>{profile?.fitnessGoal}</Text>
               </View>
             </View>
 
