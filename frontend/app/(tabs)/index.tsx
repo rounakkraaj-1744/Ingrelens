@@ -21,11 +21,12 @@ import {
   Bell,
 } from 'lucide-react-native';
 import { useApp } from '@/context/AppContext';
-import { fetchWeeklyInsights } from '@/lib/api';
+import { fetchWeeklyInsights, fetchMealHistory, MealHistoryItem } from '@/lib/api';
 
 export default function HomeScreen() {
-  const { profile } = useApp();
+  const { profile, authToken } = useApp();
   const [insights, setInsights] = useState<{ avg_calories?: number; avg_protein?: number; adherence_score?: number } | null>(null);
+  const [mealHistory, setMealHistory] = useState<MealHistoryItem[]>([]);
   const hasProfile = Boolean(profile.email || profile.name);
 
   const getGreeting = () => {
@@ -57,11 +58,20 @@ export default function HomeScreen() {
   const calorieProgress = (consumedCalories / dailyCalories) * 100;
 
   useEffect(() => {
-    const token = profile.email ? 'demo-token' : '';
-    fetchWeeklyInsights(token)
-      .then(setInsights)
-      .catch(() => setInsights(null));
-  }, [profile.email]);
+    if (!authToken) {
+      setInsights(null);
+      setMealHistory([]);
+      return;
+    }
+
+    Promise.all([
+      fetchWeeklyInsights(authToken).catch(() => null),
+      fetchMealHistory(authToken).catch(() => ({ history: [] })),
+    ]).then(([weekly, meals]) => {
+      setInsights(weekly);
+      setMealHistory(meals?.history || []);
+    });
+  }, [authToken]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -195,43 +205,29 @@ export default function HomeScreen() {
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Recent Meals</Text>
             <View style={styles.mealsList}>
-              {!hasProfile ? (
+              {!hasProfile || mealHistory.length === 0 ? (
                 <View style={styles.emptyState}>
                   <Text style={styles.emptyStateTitle}>No meals logged yet</Text>
-                  <Text style={styles.emptyStateText}>Create your profile, scan a meal, and your history will appear here.</Text>
+                  <Text style={styles.emptyStateText}>Scan a meal or log one manually and it will show up here.</Text>
                 </View>
-              ) : null}
-              {hasProfile ? (
+              ) : (
                 <>
-                  <View style={styles.mealItem}>
-                    <Image
-                      source={{
-                        uri: 'https://images.unsplash.com/photo-1744116432674-e6ff2b6d9544?w=100&h=100&fit=crop',
-                      }}
-                      style={styles.mealImage}
-                    />
-                    <View style={styles.mealInfo}>
-                      <Text style={styles.mealName}>Quinoa Power Bowl</Text>
-                      <Text style={styles.mealDetails}>450 cal • Lunch</Text>
+                  {mealHistory.slice(0, 2).map((meal, index) => (
+                    <View key={meal.id} style={styles.mealItem}>
+                      <View style={styles.mealImageFallback}>
+                        <Text style={styles.mealImageFallbackText}>{meal.meal_name.charAt(0).toUpperCase()}</Text>
+                      </View>
+                      <View style={styles.mealInfo}>
+                        <Text style={styles.mealName}>{meal.meal_name}</Text>
+                        <Text style={styles.mealDetails}>
+                          {meal.nutrition_summary?.calories ? `${Math.round(meal.nutrition_summary.calories)} cal` : 'Logged meal'} • {meal.meal_type}
+                        </Text>
+                      </View>
+                      <Text style={styles.mealTime}>{index === 0 ? 'Latest' : 'Earlier'}</Text>
                     </View>
-                    <Text style={styles.mealTime}>2h ago</Text>
-                  </View>
-                  
-                  <View style={styles.mealItem}>
-                    <Image
-                      source={{
-                        uri: 'https://images.unsplash.com/photo-1551782450-a2132b4ba21d?w=100&h=100&fit=crop',
-                      }}
-                      style={styles.mealImage}
-                    />
-                    <View style={styles.mealInfo}>
-                      <Text style={styles.mealName}>Avocado Toast</Text>
-                      <Text style={styles.mealDetails}>320 cal • Breakfast</Text>
-                    </View>
-                    <Text style={styles.mealTime}>6h ago</Text>
-                  </View>
+                  ))}
                 </>
-              ) : null}
+              )}
             </View>
           </View>
 
@@ -542,6 +538,19 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 12,
+  },
+  mealImageFallback: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: '#edf7f1',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  mealImageFallbackText: {
+    color: '#1a4431',
+    fontWeight: '700',
+    fontSize: 18,
   },
   mealInfo: {
     flex: 1,

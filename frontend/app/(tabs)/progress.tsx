@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -10,74 +10,27 @@ import {
 import {
   TrendingUp,
   Target,
-  Award,
   Calendar,
   Scale,
   Zap,
-  Trophy,
-  Star,
 } from 'lucide-react-native';
 import { useApp } from '@/context/AppContext';
 import { fetchWeeklyInsights } from '@/lib/api';
 
 export default function ProgressScreen() {
-  const { profile } = useApp();
-  const [activeTab, setActiveTab] = useState<'overview' | 'nutrition' | 'achievements'>('overview');
+  const { profile, authToken } = useApp();
+  const [activeTab, setActiveTab] = useState<'overview' | 'nutrition' | 'insights'>('overview');
   const [insights, setInsights] = useState<{ avg_calories?: number; avg_protein?: number; adherence_score?: number; top_foods?: string[] } | null>(null);
 
-  const achievements = useMemo(() => [
-    {
-      id: 1,
-      title: '7-Day Streak',
-      description: 'Logged meals for 7 consecutive days',
-      earned: profile.streak >= 7,
-      date: profile.streak >= 7 ? 'This week' : 'Keep going',
-      tier: 'gold',
-    },
-    {
-      id: 2,
-      title: 'Protein Champion',
-      description: 'Hit protein target 5 days this week',
-      earned: (insights?.avg_protein || 0) >= (profile.targetProtein || 0) * 0.8,
-      date: 'This week',
-      tier: 'silver',
-    },
-    {
-      id: 3,
-      title: 'Weight Loss Master',
-      description: 'Lost 2kg towards your goal',
-      earned: profile.fitnessGoal === 'cut' && (insights?.adherence_score || 0) > 0.7,
-      progress: Math.round((insights?.adherence_score || 0) * 100),
-      tier: 'gold',
-    },
-    {
-      id: 4,
-      title: 'Recipe Explorer',
-      description: 'Tried 10 different recipes',
-      earned: (insights?.top_foods || []).length >= 4,
-      progress: Math.min(100, ((insights?.top_foods || []).length / 4) * 100),
-      tier: 'bronze',
-    },
-  ], [profile.streak, profile.targetProtein, profile.fitnessGoal, insights]);
-
   useEffect(() => {
-    if (!profile.email) {
+    if (!authToken) {
       setInsights(null);
       return;
     }
-    fetchWeeklyInsights('demo-token')
+    fetchWeeklyInsights(authToken)
       .then(setInsights)
       .catch(() => setInsights(null));
-  }, [profile.email]);
-
-  const getAchievementTierColor = (tier: string) => {
-    switch (tier) {
-      case 'gold': return '#fbbf24';
-      case 'silver': return '#9ca3af';
-      case 'bronze': return '#d4af37';
-      default: return '#e5e7eb';
-    }
-  };
+  }, [authToken]);
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -179,74 +132,38 @@ export default function ProgressScreen() {
           </View>
         );
 
-      case 'achievements':
+      case 'insights':
         return (
           <View style={styles.tabContent}>
-            {achievements.map((achievement) => (
-              <View key={achievement.id} style={styles.achievementCard}>
-                <View style={styles.achievementContent}>
-                  <View
-                    style={[
-                      styles.achievementIcon,
-                      {
-                        backgroundColor: achievement.earned
-                          ? getAchievementTierColor(achievement.tier)
-                          : '#e5e7eb',
-                      },
-                    ]}
-                  >
-                    {achievement.earned ? (
-                      <Trophy size={32} color="white" />
-                    ) : (
-                      <Award size={32} color="#9ca3af" />
-                    )}
-                  </View>
-                  
-                  <View style={styles.achievementInfo}>
-                    <View style={styles.achievementHeader}>
-                      <Text style={styles.achievementTitle}>{achievement.title}</Text>
-                      {achievement.earned && (
-                        <View
-                          style={[
-                            styles.earnedBadge,
-                            { backgroundColor: getAchievementTierColor(achievement.tier) },
-                          ]}
-                        >
-                          <Star size={12} color="white" />
-                          <Text style={styles.earnedBadgeText}>Earned</Text>
-                        </View>
-                      )}
-                    </View>
-                    
-                    <Text style={styles.achievementDescription}>
-                      {achievement.description}
-                    </Text>
-                    
-                    {achievement.earned ? (
-                      <View style={styles.achievementDate}>
-                        <Calendar size={16} color="#9ca3af" />
-                        <Text style={styles.achievementDateText}>{achievement.date}</Text>
-                      </View>
-                    ) : (
-                      <View style={styles.progressContainer}>
-                        <View style={styles.progressHeader}>
-                          <Text style={styles.progressLabel}>Progress</Text>
-                          <Text style={styles.progressValue}>{achievement.progress}%</Text>
-                        </View>
-                        <View style={styles.progressBar}>
-                          <View
-                            style={[
-                              styles.progressFill,
-                              { width: `${achievement.progress}%` },
-                            ]}
-                          />
-                        </View>
-                      </View>
-                    )}
-                  </View>
-                </View>
+            <View style={styles.chartCard}>
+              <View style={styles.chartHeader}>
+                <Calendar size={24} color="#1a4431" />
+                <Text style={styles.chartTitle}>Weekly Summary</Text>
               </View>
-            ))}
+              <View style={styles.chartPlaceholder}>
+                <Text style={styles.chartPlaceholderText}>
+                  {insights ? 'Live summary from meal logs' : 'Add meals to generate weekly summary'}
+                </Text>
+                <Text style={styles.chartSubtext}>
+                  {insights ? `${insights.top_foods?.slice(0, 3).join(', ') || 'No top foods yet'}` : 'No tracked meals yet'}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.chartCard}>
+              <View style={styles.chartHeader}>
+                <Target size={24} color="#d4af37" />
+                <Text style={styles.chartTitle}>Goal Alignment</Text>
+              </View>
+              <View style={styles.chartPlaceholder}>
+                <Text style={styles.chartPlaceholderText}>
+                  {insights ? `${Math.round((insights.adherence_score || 0) * 100)}% adherence` : 'No goal data yet'}
+                </Text>
+                <Text style={styles.chartSubtext}>
+                  Compare logged meals against your profile targets
+                </Text>
+              </View>
+            </View>
           </View>
         );
 
@@ -301,17 +218,17 @@ export default function ProgressScreen() {
         <TouchableOpacity
           style={[
             styles.tabButton,
-            activeTab === 'achievements' && styles.activeTabButton,
+            activeTab === 'insights' && styles.activeTabButton,
           ]}
-          onPress={() => setActiveTab('achievements')}
+          onPress={() => setActiveTab('insights')}
         >
           <Text
             style={[
               styles.tabButtonText,
-              activeTab === 'achievements' && styles.activeTabButtonText,
+              activeTab === 'insights' && styles.activeTabButtonText,
             ]}
           >
-            Achievements
+            Insights
           </Text>
         </TouchableOpacity>
       </View>

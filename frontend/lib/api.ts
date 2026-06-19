@@ -103,8 +103,27 @@ export type WeeklyInsights = {
   recommendations: string[];
 };
 
+export type MealHistoryItem = {
+  id: number;
+  meal_name: string;
+  meal_type: string;
+  source: string;
+  ingredients: string[];
+  nutrition_summary: Record<string, number>;
+  confidence: number;
+  created_at: string;
+};
+
 export async function fetchWeeklyInsights(token: string) {
   return request<WeeklyInsights>('/api/insights/weekly', {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+}
+
+export async function fetchMealHistory(token: string) {
+  return request<{ history: MealHistoryItem[] }>('/api/meals/history', {
     headers: {
       Authorization: `Bearer ${token}`,
     },
