@@ -28,7 +28,7 @@ export default function HomeScreen() {
   const [insights, setInsights] = useState<{ avg_calories?: number; avg_protein?: number; adherence_score?: number } | null>(null);
   const [mealHistory, setMealHistory] = useState<MealHistoryItem[]>([]);
   const hasProfile = Boolean(profile.email || profile.name);
-  const missingItemsCount = pantryItems.filter(item => item.status !== 'fresh').length;
+  const missingItemsCount = pantryItems.filter((item: { status: string; }) => item.status !== 'fresh').length;
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -436,6 +436,25 @@ const styles = StyleSheet.create({
     color: '#9ca3af',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+  },
+  insightBanner: {
+    backgroundColor: '#edf7f1',
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 20,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  insightTitle: {
+    fontSize: 14,
+    color: '#1a4431',
+    fontWeight: '600',
+  },
+  insightValue: {
+    fontSize: 16,
+    color: '#1a4431',
+    fontWeight: '700',
   },
   streakContent: {
     flexDirection: 'row',

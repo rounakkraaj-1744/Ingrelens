@@ -47,7 +47,7 @@ export default function RecipesScreen() {
           ingredients: r.ingredients?.map((i: any) => `${i.amount} ${i.unit} ${i.name}`) || [],
           instructions: r.instructions || []
         }));
-        setRecipes((current) => [...mappedRecipes, ...current]);
+        setRecipes((current: typeof recipes) => [...mappedRecipes, ...current]);
       }
     } catch (e: any) {
       alert('Failed to generate recipes: ' + e.message);
@@ -56,11 +56,11 @@ export default function RecipesScreen() {
     }
   };
   const filteredRecipes = useMemo(() => {
-    const ingredientFiltered = recipes.filter((recipe) =>
+    const ingredientFiltered = recipes.filter((recipe: any) =>
       selectedIngredientNames.length === 0
         ? true
-        : recipe.ingredients.some((ingredient) =>
-            selectedIngredientNames.some((selected) =>
+        : recipe.ingredients.some((ingredient: any) =>
+            selectedIngredientNames.some((selected: any) =>
               ingredient.toLowerCase().includes(selected.toLowerCase()) ||
               selected.toLowerCase().includes(ingredient.toLowerCase())
             )
@@ -68,37 +68,37 @@ export default function RecipesScreen() {
     );
 
     if (!searchText) return ingredientFiltered;
-    return ingredientFiltered.filter((recipe) =>
+    return ingredientFiltered.filter((recipe: any) =>
       recipe.title.toLowerCase().includes(searchText.toLowerCase()) ||
-      recipe.tags.some((tag) => tag.toLowerCase().includes(searchText.toLowerCase()))
+      recipe.tags.some((tag: any) => tag.toLowerCase().includes(searchText.toLowerCase()))
     );
   }, [recipes, searchText, selectedIngredientNames]);
 
-  const categories = useMemo(() => {
-    const counts = recipes.reduce<Record<string, number>>((acc, recipe) => {
-      recipe.tags.forEach((tag) => {
+  const categories = useMemo<{ name: string; color: string; count: number }[]>(() => {
+    const counts = recipes.reduce<Record<string, number>>((acc: Record<string, number>, recipe: any) => {
+      recipe.tags.forEach((tag: any) => {
         acc[tag] = (acc[tag] || 0) + 1;
       });
       return acc;
     }, {});
 
-    return Object.entries(counts).slice(0, 4).map(([name, count], index) => ({
+    return Object.entries(counts).slice(0, 4).map(([name, count]: [string, any], index: number) => ({
       name,
       color: ['#8B5CF6', '#10B981', '#F59E0B', '#EF4444'][index % 4],
-      count,
+      count: count as number,
     }));
   }, [recipes]);
 
   const searchSuggestions = useMemo(() => {
     const suggestions = new Set<string>();
-    selectedIngredientNames.forEach((name) => suggestions.add(name));
-    recipes.slice(0, 5).forEach((recipe) => suggestions.add(recipe.title));
-    recipeTagsToSuggestions(recipes).forEach((item) => suggestions.add(item));
+    selectedIngredientNames.forEach((name: any) => suggestions.add(name));
+    recipes.slice(0, 5).forEach((recipe: any) => suggestions.add(recipe.title));
+    recipeTagsToSuggestions(recipes).forEach((item: any) => suggestions.add(item));
     return Array.from(suggestions).slice(0, 8);
   }, [recipes, selectedIngredientNames]);
 
   const trendingSearches = useMemo(() => {
-    return recipes.slice(0, 5).map((recipe) => recipe.title);
+    return recipes.slice(0, 5).map((recipe: any) => recipe.title);
   }, [recipes]);
 
   const handleSearch = (text: string) => {
@@ -169,7 +169,7 @@ export default function RecipesScreen() {
                     <TrendingUp size={14} color="#8B5CF6" strokeWidth={2} />
                     <Text style={styles.trendingTitle}>Trending Now</Text>
                   </View>
-                  {trendingSearches.map((trend, index) => (
+                  {trendingSearches.map((trend: string, index: number) => (
                     <TouchableOpacity
                       key={index}
                       style={styles.trendingItem}
@@ -186,14 +186,12 @@ export default function RecipesScreen() {
                 )}
                 renderItem={renderSuggestionItem}
                 keyExtractor={(item, index) => index.toString()}
-                style={styles.suggestionsList}
-                showsVerticalScrollIndicator={false}
-                maxHeight={200}/>
+                style={[styles.suggestionsList, { maxHeight: 200 }]}
+                showsVerticalScrollIndicator={false}/>
             </BlurView>
           )}
         </View>
 
-        {/* Categories */}
         <View style={styles.categoriesSection}>
           <Text style={styles.sectionTitle}>Categories</Text>
           {categories.length > 0 ? (
@@ -224,11 +222,7 @@ export default function RecipesScreen() {
               <Text style={styles.noResultsText}>No recipes found</Text>
               <Text style={styles.noResultsSubtext}>Try adjusting your search terms</Text>
               {selectedIngredientNames.length > 0 && (
-                <TouchableOpacity 
-                  style={[styles.generateBtn, isGenerating && {opacity: 0.5}]} 
-                  onPress={handleGenerateRecipes}
-                  disabled={isGenerating}
-                >
+                <TouchableOpacity style={[styles.generateBtn, isGenerating && {opacity: 0.5}]} onPress={handleGenerateRecipes} disabled={isGenerating}>
                   <Text style={styles.generateBtnText}>
                     {isGenerating ? 'Generating with AI...' : 'Generate AI Recipes'}
                   </Text>
@@ -236,14 +230,11 @@ export default function RecipesScreen() {
               )}
             </View>
           ) : (
-            filteredRecipes.map((recipe, index) => (
+            filteredRecipes.map((recipe: any) => (
               <BlurView key={recipe.id} intensity={20} style={styles.recipeCard}>
                 <Image source={{ uri: recipe.image }} style={styles.recipeImage} resizeMode="cover" />
                 
-                <LinearGradient
-                  colors={['transparent', 'rgba(0, 0, 0, 0.7)']}
-                  style={styles.recipeGradient}
-                />
+                <LinearGradient colors={['transparent', 'rgba(0, 0, 0, 0.7)']} style={styles.recipeGradient} />
                 
                 <TouchableOpacity style={styles.likeButton} onPress={() => toggleRecipeLike(String(recipe.id))}>
                   <Heart size={20} color={recipe.liked ? '#EF4444' : '#FFFFFF'} fill={recipe.liked ? '#EF4444' : 'transparent'} strokeWidth={2} />

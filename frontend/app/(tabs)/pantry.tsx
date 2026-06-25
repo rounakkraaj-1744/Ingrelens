@@ -17,7 +17,7 @@ import {
   AlertTriangle,
   Check,
 } from 'lucide-react-native';
-import { useApp } from '@/context/AppContext';
+import { useApp, PantryItem } from '@/context/AppContext';
 
 export default function PantryScreen() {
   const { pantryItems, profile } = useApp();
@@ -25,8 +25,8 @@ export default function PantryScreen() {
   const [activeTab, setActiveTab] = useState<'pantry' | 'shopping'>('pantry');
 
   const shoppingList = pantryItems
-    .filter((item) => item.status !== 'fresh')
-    .map((item, index) => ({
+    .filter((item: PantryItem) => item.status !== 'fresh')
+    .map((item: PantryItem, index: number) => ({
       id: `${item.id}-${index}`,
       name: item.name,
       category: item.category,
@@ -51,7 +51,7 @@ export default function PantryScreen() {
     }
   };
 
-  const filteredItems = pantryItems.filter(item =>
+  const filteredItems = pantryItems.filter((item: PantryItem) =>
     item.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -128,7 +128,7 @@ export default function PantryScreen() {
                   <AlertTriangle size={24} color="#f59e0b" />
                 </View>
                 <Text style={styles.statNumber}>
-                  {pantryItems.filter(item => item.status === 'expiring').length}
+                  {pantryItems.filter((item: PantryItem) => item.status === 'expiring').length}
                 </Text>
                 <Text style={styles.statLabel}>Expiring Soon</Text>
               </View>
@@ -137,13 +137,12 @@ export default function PantryScreen() {
                   <Calendar size={24} color="#ef4444" />
                 </View>
                 <Text style={styles.statNumber}>
-                  {pantryItems.filter(item => item.status === 'expired').length}
+                  {pantryItems.filter((item: PantryItem) => item.status === 'expired').length}
                 </Text>
                 <Text style={styles.statLabel}>Expired</Text>
               </View>
             </View>
 
-            {/* Pantry Items */}
             <View style={styles.itemsList}>
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>Your Ingredients</Text>
@@ -156,12 +155,12 @@ export default function PantryScreen() {
                 <Text style={styles.summaryTitle}>Smart summary</Text>
                 <Text style={styles.summaryText}>
                   {pantryItems.length > 0
-                    ? `${pantryItems.filter(item => item.status === 'expiring').length} items need attention and ${pantryItems.filter(item => item.status === 'fresh').length} are ready to use.`
+                    ? `${pantryItems.filter((item: PantryItem) => item.status === 'expiring').length} items need attention and ${pantryItems.filter((item: PantryItem) => item.status === 'fresh').length} are ready to use.`
                     : 'No pantry items yet. Add your first scan to begin tracking.'}
                 </Text>
               </View>
 
-              {filteredItems.length > 0 ? filteredItems.map((item) => (
+              {filteredItems.length > 0 ? filteredItems.map((item: PantryItem) => (
                 <View key={item.id} style={styles.pantryItem}>
                   <View style={styles.itemContent}>
                     <View style={styles.itemInfo}>
@@ -201,7 +200,7 @@ export default function PantryScreen() {
               <Text style={styles.sectionTitle}>Shopping List</Text>
               <View style={styles.shoppingStats}>
                 <Text style={styles.shoppingStatsText}>
-                  {shoppingList.filter(item => item.needed).length} items needed
+                  {shoppingList.filter((item: any) => item.needed).length} items needed
                 </Text>
               </View>
             </View>
@@ -213,7 +212,7 @@ export default function PantryScreen() {
                   <Text style={styles.emptyStateText}>Your shopping suggestions will appear after you add pantry items or set a goal.</Text>
                 </View>
               ) : null}
-              {shoppingList.map((item) => (
+              {shoppingList.map((item: any) => (
                 <View key={item.id} style={styles.shoppingItem}>
                   <View style={styles.shoppingItemContent}>
                     <View
