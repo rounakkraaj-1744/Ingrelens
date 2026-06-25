@@ -24,28 +24,14 @@ export default function PantryScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'pantry' | 'shopping'>('pantry');
 
-  const shoppingList = [
-    ...pantryItems
-      .filter((item) => item.status !== 'fresh')
-      .map((item, index) => ({
-        id: `${item.id}-${index}`,
-        name: item.name,
-        category: item.category,
-        needed: true,
-      })),
-    {
-      id: 'goal-protein',
-      name: profile.fitnessGoal === 'cut' ? 'Greek Yogurt' : 'Chicken Breast',
-      category: 'Protein',
+  const shoppingList = pantryItems
+    .filter((item) => item.status !== 'fresh')
+    .map((item, index) => ({
+      id: `${item.id}-${index}`,
+      name: item.name,
+      category: item.category,
       needed: true,
-    },
-    {
-      id: 'goal-carb',
-      name: profile.fitnessGoal === 'bulk' ? 'Quinoa' : 'Brown Rice',
-      category: 'Grains',
-      needed: profile.fitnessGoal !== 'maintain',
-    },
-  ];
+    }));
 
   const getStatusColor = (status: string) => {
     switch (status) {

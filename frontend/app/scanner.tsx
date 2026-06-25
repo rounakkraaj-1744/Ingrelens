@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -18,7 +18,7 @@ import {
   Zap,
 } from 'lucide-react-native';
 import { useApp } from '@/context/AppContext';
-import { logScan } from '@/lib/api';
+import { logScan, detectIngredients } from '@/lib/api';
 
 interface DetectedIngredient {
   name: string;
@@ -34,22 +34,7 @@ export default function ScannerScreen() {
   const [permission, requestPermission] = useCameraPermissions();
   const [facing] = useState<CameraType>('back');
 
-  const simulatedDetectedIngredients: DetectedIngredient[] = useMemo(() => {
-    const pantryMatches = pantryItems.slice(0, 3).map((item: any, index: number) => ({
-      name: item.name,
-      confidence: 96 - index * 6,
-      selected: true,
-    }));
-    const recipeIngredients = recipes
-      .flatMap((recipe: any) => recipe.ingredients)
-      .slice(0, 3)
-      .map((name: string, index: number) => ({
-        name,
-        confidence: 86 - index * 4,
-        selected: index !== 2,
-      }));
-    return [...pantryMatches, ...recipeIngredients].slice(0, 6);
-  }, [pantryItems, recipes]);
+  const cameraRef = useRef<CameraView>(null);
 
   useEffect(() => {
     if (!permission) {
@@ -57,18 +42,34 @@ export default function ScannerScreen() {
     }
   }, [permission, requestPermission]);
 
-  const handleScan = () => {
+  const handleScan = async () => {
     if (!permission?.granted) {
       Alert.alert('Camera Permission', 'Camera permission is required to scan ingredients.');
       return;
     }
 
+    if (!cameraRef.current) return;
+
     setIsScanning(true);
-    setTimeout(() => {
-      setIsScanning(false);
+    try {
+      const photo = await cameraRef.current.takePictureAsync({ base64: false });
+      if (!photo?.uri) throw new Error('Failed to take picture');
+      
+      const result = await detectIngredients(photo.uri, authToken || '');
+      
+      const ingredients = result.ingredients.map((ing: any) => ({
+        name: ing.ingredient,
+        confidence: Math.round(ing.confidence * 100),
+        selected: true,
+      }));
+      
+      updateScanFromIngredients(ingredients);
       setHasScanned(true);
-      updateScanFromIngredients(simulatedDetectedIngredients);
-    }, 3000);
+    } catch (e: any) {
+      Alert.alert('Detection Failed', e.message || 'Could not detect ingredients.');
+    } finally {
+      setIsScanning(false);
+    }
   };
 
   const handleRetry = () => {
@@ -148,7 +149,7 @@ export default function ScannerScreen() {
       {!hasScanned ? (
         <View style={styles.cameraContainer}>
           {isScanning ? (
-            <CameraView style={styles.camera} facing={facing} />
+            <CameraView ref={cameraRef} style={styles.camera} facing={facing} />
           ) : (
             <View style={styles.cameraPlaceholder}>
               <Camera size={64} color="#9ca3af" />

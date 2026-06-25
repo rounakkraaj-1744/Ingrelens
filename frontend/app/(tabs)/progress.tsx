@@ -22,6 +22,8 @@ export default function ProgressScreen() {
   const [activeTab, setActiveTab] = useState<'overview' | 'nutrition' | 'insights'>('overview');
   const [insights, setInsights] = useState<{ avg_calories?: number; avg_protein?: number; adherence_score?: number; top_foods?: string[] } | null>(null);
 
+  const totalMacros = (profile.targetProtein || 0) + (profile.targetCarbs || 0) + (profile.targetFats || 0);
+
   useEffect(() => {
     if (!authToken) {
       setInsights(null);
@@ -98,17 +100,17 @@ export default function ProgressScreen() {
                 <View style={styles.macroItem}>
                   <View style={[styles.macroColor, { backgroundColor: '#1a4431' }]} />
                   <Text style={styles.macroLabel}>Protein</Text>
-                  <Text style={styles.macroValue}>{profile.targetProtein ? `${Math.round((profile.targetProtein / (profile.targetProtein + profile.targetCarbs + profile.targetFats)) * 100)}%` : '—'}</Text>
+                  <Text style={styles.macroValue}>{totalMacros > 0 ? `${Math.round(((profile.targetProtein || 0) / totalMacros) * 100)}%` : '—'}</Text>
                 </View>
                 <View style={styles.macroItem}>
                   <View style={[styles.macroColor, { backgroundColor: '#d4af37' }]} />
                   <Text style={styles.macroLabel}>Carbs</Text>
-                  <Text style={styles.macroValue}>{profile.targetCarbs ? `${Math.round((profile.targetCarbs / (profile.targetProtein + profile.targetCarbs + profile.targetFats)) * 100)}%` : '—'}</Text>
+                  <Text style={styles.macroValue}>{totalMacros > 0 ? `${Math.round(((profile.targetCarbs || 0) / totalMacros) * 100)}%` : '—'}</Text>
                 </View>
                 <View style={styles.macroItem}>
                   <View style={[styles.macroColor, { backgroundColor: '#6b7280' }]} />
                   <Text style={styles.macroLabel}>Fats</Text>
-                  <Text style={styles.macroValue}>{profile.targetFats ? `${Math.round((profile.targetFats / (profile.targetProtein + profile.targetCarbs + profile.targetFats)) * 100)}%` : '—'}</Text>
+                  <Text style={styles.macroValue}>{totalMacros > 0 ? `${Math.round(((profile.targetFats || 0) / totalMacros) * 100)}%` : '—'}</Text>
                 </View>
               </View>
             </View>

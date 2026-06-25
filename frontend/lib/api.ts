@@ -210,3 +210,36 @@ export async function syncRecipeLikes(token: string, items: { recipe_id: string;
     body: JSON.stringify(items),
   });
 }
+
+export async function detectIngredients(imageUri: string, token: string) {
+  const formData = new FormData();
+  formData.append('file', {
+    uri: imageUri,
+    type: 'image/jpeg',
+    name: 'photo.jpg',
+  } as any);
+
+  const response = await fetch(`${BASE_URL}/api/detect/ingredients`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const body = await response.text();
+    throw new Error(body || `Request failed with ${response.status}`);
+  }
+
+  return response.json();
+}
+
+export async function generateRecipes(ingredients: string[], token: string) {
+  return request<{ recipes: any[] }>('/api/recipes/generate', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify(ingredients),
+  });
+}
+

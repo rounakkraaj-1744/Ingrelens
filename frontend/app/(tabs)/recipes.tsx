@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { generateRecipes } from '@/lib/api';
 import {
   View,
   Text,
@@ -19,9 +20,41 @@ function recipeTagsToSuggestions(sourceRecipes: { tags: string[] }[]) {
 }
 
 export default function RecipesScreen() {
-  const { recipes, toggleRecipeLike, selectedIngredientNames, profile } = useApp();
+  const { recipes, toggleRecipeLike, selectedIngredientNames, profile, setRecipes, authToken } = useApp();
   const [searchText, setSearchText] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const handleGenerateRecipes = async () => {
+    if (!authToken || selectedIngredientNames.length === 0) return;
+    setIsGenerating(true);
+    try {
+      const response = await generateRecipes(selectedIngredientNames, authToken);
+      if (response && response.recipes) {
+        const mappedRecipes = response.recipes.map((r: any) => ({
+          id: `gen-${Date.now()}-${Math.random()}`,
+          title: r.name,
+          image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&q=80',
+          time: `${(r.prep_time_minutes || 0) + (r.cook_time_minutes || 0)} min`,
+          servings: r.servings || 2,
+          calories: r.nutrition_per_serving?.calories || 0,
+          protein: `${r.nutrition_per_serving?.protein_g || 0}g`,
+          carbs: `${r.nutrition_per_serving?.carbs_g || 0}g`,
+          fat: `${r.nutrition_per_serving?.fats_g || 0}g`,
+          difficulty: r.difficulty || 'Medium',
+          liked: false,
+          tags: r.tags || [],
+          ingredients: r.ingredients?.map((i: any) => `${i.amount} ${i.unit} ${i.name}`) || [],
+          instructions: r.instructions || []
+        }));
+        setRecipes((current) => [...mappedRecipes, ...current]);
+      }
+    } catch (e: any) {
+      alert('Failed to generate recipes: ' + e.message);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
   const filteredRecipes = useMemo(() => {
     const ingredientFiltered = recipes.filter((recipe) =>
       selectedIngredientNames.length === 0
@@ -190,6 +223,17 @@ export default function RecipesScreen() {
             <View style={styles.noResultsContainer}>
               <Text style={styles.noResultsText}>No recipes found</Text>
               <Text style={styles.noResultsSubtext}>Try adjusting your search terms</Text>
+              {selectedIngredientNames.length > 0 && (
+                <TouchableOpacity 
+                  style={[styles.generateBtn, isGenerating && {opacity: 0.5}]} 
+                  onPress={handleGenerateRecipes}
+                  disabled={isGenerating}
+                >
+                  <Text style={styles.generateBtnText}>
+                    {isGenerating ? 'Generating with AI...' : 'Generate AI Recipes'}
+                  </Text>
+                </TouchableOpacity>
+              )}
             </View>
           ) : (
             filteredRecipes.map((recipe, index) => (
@@ -529,5 +573,17 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.8)',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+  },
+  generateBtn: {
+    marginTop: 20,
+    backgroundColor: '#8B5CF6',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 24,
+  },
+  generateBtnText: {
+    color: '#fff',
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 16,
   },
 });

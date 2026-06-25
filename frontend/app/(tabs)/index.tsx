@@ -24,10 +24,11 @@ import { useApp } from '@/context/AppContext';
 import { fetchWeeklyInsights, fetchMealHistory, MealHistoryItem } from '@/lib/api';
 
 export default function HomeScreen() {
-  const { profile, authToken } = useApp();
+  const { profile, authToken, pantryItems } = useApp();
   const [insights, setInsights] = useState<{ avg_calories?: number; avg_protein?: number; adherence_score?: number } | null>(null);
   const [mealHistory, setMealHistory] = useState<MealHistoryItem[]>([]);
   const hasProfile = Boolean(profile.email || profile.name);
+  const missingItemsCount = pantryItems.filter(item => item.status !== 'fresh').length;
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -236,7 +237,7 @@ export default function HomeScreen() {
               <View>
                 <Text style={styles.cardTitle}>Shopping List</Text>
                 <Text style={styles.shoppingListSubtitle}>
-                  5 items to buy for this week
+                  {missingItemsCount} items to buy for this week
                 </Text>
               </View>
               <TouchableOpacity
